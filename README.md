@@ -69,6 +69,19 @@ fixtures/
   cafe-demo/            a fake café website with known findings, for a demo that never fails
 ```
 
+## Dashboard
+
+Needs Node 18+.
+
+```
+cd dashboard
+npm install
+npm run dev        # http://localhost:5173
+npm run build      # production build in dashboard/dist
+```
+
+It reads `dashboard/public/findings.json`, which starts as a copy of `data/fake-findings.json`. After a scan, `npm run data` copies `../out/findings.json` there (`npm run data:fake` puts the fake data back). Any file in the contract format works without code changes.
+
 ## Ground rules
 
 - **Passive only.** One normal page load plus `robots.txt`, `llms.txt` and the privacy policy. No crawling, no form posts, no talking to the bot, no probing paths.
