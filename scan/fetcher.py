@@ -121,7 +121,7 @@ def _get_text_file(context, origin, path):
     try:
         if resp.status != 200:
             return None
-        body = resp.text()
+        body = resp.body().decode("utf-8", errors="replace")
         if _looks_like_html(resp.headers.get("content-type"), body):
             return None
         return _cap(body, TEXT_CAP)
@@ -134,7 +134,7 @@ def _get_text_file(context, origin, path):
 def _fetch_privacy(context, url):
     page = context.new_page()
     try:
-        page.goto(url, timeout=GOTO_TIMEOUT_MS)
+        page.goto(url, wait_until="domcontentloaded", timeout=GOTO_TIMEOUT_MS)
         try:
             page.wait_for_load_state("networkidle", timeout=IDLE_TIMEOUT_MS)
         except PlaywrightTimeout:
@@ -171,7 +171,7 @@ def fetch_site(browser, url):
         page.on("response", on_response)
 
         try:
-            response = page.goto(url, timeout=GOTO_TIMEOUT_MS)
+            response = page.goto(url, wait_until="domcontentloaded", timeout=GOTO_TIMEOUT_MS)
             raw["status"] = response.status if response else None
         except PlaywrightError as exc:
             raw["error"] = _short_error(exc)

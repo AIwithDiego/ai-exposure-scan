@@ -109,6 +109,26 @@ def test_privacy_link_anchors(tmp_path, link, expected):
     site = tmp_path / "site"
     site.mkdir()
     (site / "index.html").write_text(f'{link}<h2 id="privacy">Privacy</h2>', encoding="utf-8")
+    policy = _fetch_local(site, tmp_path)["privacy_policy"]
+    if expected is None:
+        assert policy is None
+    else:
+        assert policy["url"].endswith(expected) and "Privacy" in policy["text"]
+
+
+def test_non_utf8_text_files_do_not_fail_site(tmp_path):
+    site = tmp_path / "site"
+    site.mkdir()
+    (site / "index.html").write_text("<p>Caf\u00e9</p>", encoding="utf-8")
+    (site / "robots.txt").write_bytes("User-agent: *\n# Caf\u00e9\nDisallow:\n".encode("latin-1"))
+    (site / "llms.txt").write_bytes(b"# Caf\xe9 \xff\n")
+    raw = _fetch_local(site, tmp_path)
+    assert raw["error"] is None and raw["status"] == 200
+    assert "User-agent: *" in raw["robots_txt"] and "\ufffd" in raw["robots_txt"]
+    assert raw["llms_txt"].startswith("# Caf")
+
+
+def _fetch_local(site, tmp_path):
     handler = functools.partial(QuietHandler, directory=str(site))
     server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
     threading.Thread(target=server.serve_forever, daemon=True).start()
@@ -116,11 +136,7 @@ def test_privacy_link_anchors(tmp_path, link, expected):
         sites = tmp_path / "sites.txt"
         sites.write_text(f"http://localhost:{server.server_address[1]}/\n", encoding="utf-8")
         [path] = fetcher.run(sites, tmp_path / "raw")
-        policy = json.loads(path.read_text(encoding="utf-8"))["privacy_policy"]
-        if expected is None:
-            assert policy is None
-        else:
-            assert policy["url"].endswith(expected) and "Privacy" in policy["text"]
+        return json.loads(path.read_text(encoding="utf-8"))
     finally:
         server.shutdown()
         server.server_close()
