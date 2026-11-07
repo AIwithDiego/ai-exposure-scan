@@ -2,15 +2,18 @@ import copy
 import json
 import re
 import shutil
+import sys
 from pathlib import Path
 
 import pytest
 
-from scan import detectors
-from scan.cli import main as cli_main
-from scan.score import compute_score, merge_findings
-
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
+from scan import detectors  # noqa: E402
+from scan.cli import main as cli_main  # noqa: E402
+from scan.score import compute_score, merge_findings  # noqa: E402
+
 RAW = Path(__file__).resolve().parent / "raw" / "cafe-demo.json"
 FIXTURE_JS = ROOT / "fixtures" / "cafe-demo" / "js" / "menu-assistant.js"
 
