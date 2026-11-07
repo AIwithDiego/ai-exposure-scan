@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AI Exposure Scan · Design system v0.2 (proposal)</title>
+<title>AI Exposure Scan · Design system v0.3 (proposal)</title>
 
 <!--
   Two style blocks:
@@ -18,29 +18,43 @@
    and component rules change.
    ========================================================== */
 :root {
-  /* Surfaces: card vs page ≥ 1.5:1 so panels hold up on a projector */
-  --bg: #cbd1da;
+  /* Surfaces: white cards on a faint violet page, separated by shadow */
+  --bg: #faf8ff;
   --surface: #ffffff;
-  --surface-2: #f1f3f6;
-  --inset: #f6f7f9;
+  --surface-2: #f5f3ff;
+  --inset: #f8f7fc;
   --track: #e5e7eb;
+  --ring-track: #ece9f5;
 
-  /* Lines: outlines ≥ 3:1 against both card and page; dividers ≥ 3:1 inside cards */
-  --border: #6b7484;
+  /* Lines: light, brand-tinted; severity outlines keep their own darker line */
+  --border: #e4e0f0;
+  --divider: #e4e0f0;
+  --control-border: #c9c1e0;
   --border-strong: #4b5563;
-  --divider: #8a94a3;
+  --info-line: #6b7484;
 
   /* Text */
   --text: #111827;
   --muted: #3f4754;
   --subtle: #4b5563;
-  --link: #1e40af;
+  --link: #6d28d9;
 
-  /* Accent: blue, kept well away from red "high" */
-  --accent: #1d4ed8;
-  --accent-hover: #1e40af;
-  --accent-soft: #e3eafc;
-  --focus: #1d4ed8;
+  /* Brand layer: violet + teal. Never red or amber. */
+  --violet: #6d28d9;
+  --violet-light: #8b5cf6;
+  --violet-soft: #ede9fe;
+  --teal: #0d9488;
+  --teal-dark: #0f766e;
+  --teal-light: #2dd4bf;
+  --teal-soft: #ccfbf1;
+  --band-1: #4c1d95;
+  --band-2: #6d28d9;
+  --band-3: #0f766e;
+  --brand-gradient: linear-gradient(100deg, var(--band-1) 0%, var(--band-2) 50%, var(--band-3) 100%);
+  --accent: var(--violet);
+  --accent-hover: #5b21b6;
+  --accent-soft: var(--violet-soft);
+  --focus: var(--violet);
 
   /* Severity: a lightness ramp, darkest = most urgent */
   --high: #b42318;
@@ -99,8 +113,8 @@
   --radius-pill: 999px;
 
   /* Elevation: small, neutral, no glows */
-  --shadow-1: 0 1px 2px rgba(17, 24, 39, 0.08);
-  --shadow-2: 0 8px 24px -8px rgba(17, 24, 39, 0.25);
+  --shadow-1: 0 1px 2px rgba(76, 29, 149, 0.06), 0 4px 16px -4px rgba(76, 29, 149, 0.12);
+  --shadow-2: 0 12px 32px -8px rgba(76, 29, 149, 0.22);
 
   font-family: var(--font-sans);
   font-size: 16px;
@@ -111,17 +125,23 @@
 }
 
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); min-height: 100vh; }
+body { margin: 0; background: var(--bg); min-height: 100vh; overflow-x: clip; }
 h1, h2, h3, h4 { margin: 0; line-height: 1.25; letter-spacing: -0.01em; }
 a { color: var(--link); word-break: break-all; text-underline-offset: 2px; }
 a:hover { color: var(--text); }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
 /* Layout (current App.jsx) */
-.page { max-width: 1040px; margin: 0 auto; padding: 32px 24px 64px; }
-.header { margin-bottom: 24px; }
-.header h1 { font-size: var(--text-xl); font-weight: 700; }
-.header p { margin: 4px 0 0; }
+.page { max-width: 1040px; margin: 0 auto; padding: 0 24px 64px; }
+
+/* Header band: full-bleed gradient, CSS only (breaks out of .page with vw margins) */
+.header { margin: 0 calc(50% - 50vw) 32px; padding: 28px calc(50vw - 50%); background: var(--brand-gradient); color: #fff; }
+.header h1 { display: flex; align-items: center; gap: 12px; font-size: var(--text-xl); font-weight: 700; color: #fff; }
+.header h1::before {
+  content: ""; width: 34px; height: 34px; flex-shrink: 0; background: #fff;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M12 1.5 21 6.75v10.5L12 22.5 3 17.25V6.75z' stroke-width='2'/%3E%3Cpath d='M12 7 16.5 9.6v5.2L12 17.4l-4.5-2.6V9.6z' fill='black' stroke='none'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M12 1.5 21 6.75v10.5L12 22.5 3 17.25V6.75z' stroke-width='2'/%3E%3Cpath d='M12 7 16.5 9.6v5.2L12 17.4l-4.5-2.6V9.6z' fill='black' stroke='none'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.header p, .header .muted { margin: 6px 0 0 46px; color: #fff; font-size: var(--text-sm); font-weight: 500; }
 
 .muted { color: var(--muted); }
 .small { font-size: var(--text-sm); }
@@ -138,9 +158,20 @@ a:hover { color: var(--text); }
 
 /* Stat cards (not clickable: no hover state) */
 .cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 24px; }
-.total { padding: 16px; }
-.total-count { font-size: var(--text-xl); font-weight: 700; font-variant-numeric: tabular-nums; }
+.total { padding: 18px; display: grid; grid-template-columns: 44px minmax(0, 1fr); column-gap: 14px; align-items: center; }
+.total::before {
+  content: ""; grid-row: 1 / span 2; width: 44px; height: 44px; border-radius: var(--radius-lg);
+  background-color: var(--tile, var(--violet-soft)); background-image: var(--icon, none);
+  background-position: center; background-size: 22px; background-repeat: no-repeat;
+}
+.total-count { font-size: 2rem; font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 .total-label { color: var(--muted); font-size: var(--text-sm); }
+/* Icon per type, in TYPES order (chatbot, data_transfer, key_leak, disclosure, agent_ready) */
+.cards > .total:nth-child(1) { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236d28d9' stroke-width='1.8' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M4 5h16v11H9l-5 4z'/%3E%3C/svg%3E"); } /* chatbot */
+.cards > .total:nth-child(2) { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230f766e' stroke-width='1.8' stroke-linejoin='round' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18'/%3E%3C/svg%3E"); --tile: var(--teal-soft); } /* data_transfer */
+.cards > .total:nth-child(3) { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236d28d9' stroke-width='1.8' stroke-linejoin='round' stroke-linecap='round'%3E%3Ccircle cx='8' cy='15' r='4'/%3E%3Cpath d='m11 12 9-9M17 6l3 3M15 8l2 2'/%3E%3C/svg%3E"); } /* key_leak */
+.cards > .total:nth-child(4) { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230f766e' stroke-width='1.8' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E"); --tile: var(--teal-soft); } /* disclosure */
+.cards > .total:nth-child(5) { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236d28d9' stroke-width='1.8' stroke-linejoin='round' stroke-linecap='round'%3E%3Crect x='4' y='7' width='16' height='12' rx='3'/%3E%3Cpath d='M12 3v4M9 12h.01M15 12h.01M9 16h6'/%3E%3C/svg%3E"); } /* agent_ready */
 
 /* Destinations */
 .destinations { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 18px; }
@@ -167,19 +198,32 @@ a:hover { color: var(--text); }
 .site-name { font-weight: 600; }
 
 /* Score chips */
-.score { display: inline-block; min-width: 44px; text-align: center; font-weight: 700; padding: 2px 10px; border-radius: var(--radius-pill); border: 1px solid transparent; font-variant-numeric: tabular-nums; }
+.score { display: inline-block; min-width: 56px; text-align: center; font-size: 1.0625rem; font-weight: 800; padding: 3px 14px; border-radius: var(--radius-pill); border: 1px solid transparent; font-variant-numeric: tabular-nums; }
 .score-good { background: var(--good-soft); color: var(--good-on); border-color: var(--good); }
 .score-fair { background: var(--fair-soft); color: var(--fair-on); border-color: var(--fair); }
 .score-poor { background: var(--poor-soft); color: var(--poor-on); border-color: var(--poor); }
-.score-none { background: var(--none-soft); color: var(--none-on); border-color: var(--border); font-weight: 600; }
+.score-none { background: var(--none-soft); color: var(--none-on); border-color: var(--info-line); font-weight: 600; font-size: var(--text-sm); }
 .score-large { font-size: var(--text-xl); padding: 6px 18px; border-radius: var(--radius-xl); }
+
+/* Score ring (site view) — needs JSX: <span class="score-ring ring-{band}" style="--score: N"><b>N</b></span> */
+.score-ring {
+  --score: 0; --arc: var(--none-on);
+  position: relative; display: inline-grid; place-items: center; width: 96px; height: 96px; border-radius: 50%; flex-shrink: 0;
+  background: conic-gradient(var(--arc) calc(var(--score) * 1%), var(--ring-track) 0);
+}
+.score-ring::before { content: ""; position: absolute; inset: 9px; border-radius: 50%; background: var(--surface); }
+.score-ring > b { position: relative; font-size: 1.875rem; font-weight: 800; letter-spacing: -0.02em; color: var(--text); font-variant-numeric: tabular-nums; }
+.ring-good { --arc: var(--good); }
+.ring-fair { --arc: var(--fair); }
+.ring-poor { --arc: var(--poor); }
+.ring-none > b { font-size: var(--text-xs); font-weight: 600; color: var(--none-on); text-align: center; line-height: 1.2; max-width: 60px; }
 
 /* Buttons */
 .button {
   font: inherit; font-weight: 500; cursor: pointer; background: var(--surface); color: var(--text);
-  border: 1px solid var(--border-strong); border-radius: var(--radius); padding: 8px 14px; margin-bottom: 16px;
+  border: 1px solid var(--control-border); border-radius: var(--radius); padding: 8px 14px; margin-bottom: 16px;
 }
-.button:hover { background: var(--surface-2); }
+.button:hover { background: var(--surface-2); border-color: var(--violet-light); }
 .button-primary { background: var(--accent); color: #fff; font-weight: 600; border-color: var(--accent); }
 .button-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
 .button-small { padding: 2px 10px; margin: 0; font-size: var(--text-sm); }
@@ -192,12 +236,12 @@ a:hover { color: var(--text); }
 .banner {
   display: flex; gap: 12px; align-items: flex-start;
   background: var(--surface); color: var(--text);
-  border: 1px solid var(--border); border-left: 4px solid var(--border-strong);
+  border: 1px solid var(--info-line); border-left: 4px solid var(--border-strong);
   border-radius: var(--radius-lg); padding: 12px 16px; margin-bottom: 24px;
 }
 .banner::before {
   content: "i"; flex-shrink: 0; display: grid; place-items: center; width: 22px; height: 22px; margin-top: 1px;
-  border-radius: 50%; background: var(--none-soft); color: var(--muted); border: 1px solid var(--border);
+  border-radius: 50%; background: var(--none-soft); color: var(--muted); border: 1px solid var(--info-line);
   font-weight: 700; font-size: 13px; font-family: Georgia, serif; font-style: italic;
 }
 
@@ -214,8 +258,8 @@ a:hover { color: var(--text); }
 .pill-high { background: var(--high); color: var(--high-on); border-color: var(--high); }
 .pill-medium { background: var(--medium); color: var(--medium-on); border-color: var(--fair); }
 .pill-low { background: var(--low); color: var(--low-on); border-color: var(--low-line); }
-.pill-info { background: var(--info); color: var(--info-on); border-color: var(--border); font-weight: 500; }
-.method-detected { background: var(--surface-2); color: var(--text); border-color: var(--border); }
+.pill-info { background: var(--info); color: var(--info-on); border-color: var(--info-line); font-weight: 500; }
+.method-detected { background: var(--surface-2); color: var(--text); border-color: var(--control-border); }
 .method-judged { background: transparent; color: var(--muted); border: 1px dashed var(--border-strong); cursor: help; }
 
 .evidence { margin-bottom: 14px; }
@@ -227,7 +271,7 @@ a:hover { color: var(--text); }
   white-space: pre-wrap; word-break: break-word;
 }
 
-.fix { background: var(--accent-soft); border: 1px solid var(--accent); border-left-width: 4px; border-radius: var(--radius); padding: 12px 16px; }
+.fix { background: var(--surface-2); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: var(--radius); padding: 12px 16px; }
 .fix-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .fix-head strong { font-weight: 600; }
 .fix p { margin: 6px 0 0; }
@@ -372,6 +416,8 @@ a:hover { color: var(--text); }
 .ds-frame .sidebar { position: static; height: auto; }
 .ds-frame-main { padding: 24px; background: var(--bg); }
 .ds-frame-main .header h1 { font-size: var(--text-lg); }
+.ds-main .header { margin: 0 0 24px; padding: 22px 24px; border-radius: var(--radius-lg); }
+.ds-ring-row { display: flex; flex-wrap: wrap; gap: 24px; align-items: center; }
 
 @media (max-width: 1000px) {
   .ds-main { padding: 32px 24px 80px; }
@@ -421,7 +467,7 @@ a:hover { color: var(--text); }
     <div class="ds-side-head">
       <div class="ds-brand">
         <svg width="28" height="28" class="brand-mark"><use href="#mark"/></svg>
-        <div>AI Exposure Scan<small>Design system · v0.2</small></div>
+        <div>AI Exposure Scan<small>Design system · v0.3</small></div>
       </div>
       <button class="button button-small ds-menu" type="button" aria-expanded="false" aria-controls="ds-nav" id="ds-menu">Menu</button>
     </div>
@@ -457,16 +503,17 @@ a:hover { color: var(--text); }
 
     <!-- ===================== Hero ===================== -->
     <section class="ds-hero" id="intro">
-      <div class="ds-eyebrow">Proposal · v0.2 · light base</div>
+      <header class="header"><h1>AI Exposure Scan</h1><p class="muted">Scanned 07/11/2026, 12:05 · 4 sites</p></header>
+      <div class="ds-eyebrow">Proposal · v0.3 · light base + brand layer</div>
       <h1>Design tokens for AI Exposure Scan</h1>
-      <p>This version keeps the dashboard's current light look and only borrows a token system: named colours, type, spacing and radius. Every component below uses the class names that <code class="ds-code-inline">dashboard/src/App.jsx</code> already renders, so applying it is mostly a stylesheet swap.</p>
+      <p>Two layers. The <b>severity layer</b> (red, amber, slate and grey) is unchanged from v0.2. A separate <b>brand layer</b> in violet and teal gives the dashboard its identity, and it never uses red or amber. Every component below uses the class names that <code class="ds-code-inline">dashboard/src/App.jsx</code> already renders, so applying it is mostly a stylesheet swap.</p>
       <ul class="ds-changes">
-        <li><b>Blue accent</b> (<code>--accent #1d4ed8</code>), kept clearly apart from red "high".</li>
-        <li><b>Severity is a lightness ramp:</b> solid red high, amber medium, pale slate low, outlined grey info. Violet is gone.</li>
-        <li><b>Neutral banner</b> for "Couldn't scan", with no red and no glow.</li>
-        <li><b>Projector-safe contrast:</b> cards are ≥ 1.5:1 against the page and borders are ≥ 3:1. See <a href="#contrast">Contrast checks</a>.</li>
-        <li><b>No glows</b>, and no hover effect on stat cards, which can't be clicked.</li>
-        <li><code>tabular-nums</code> only on number cells: counts, scores and the High/Medium columns.</li>
+        <li><b>Brand palette:</b> violet <code>#6d28d9</code> / <code>#8b5cf6</code> and teal <code>#0d9488</code> / <code>#2dd4bf</code>. The accent is violet: buttons, links, the fix-box rule and focus.</li>
+        <li><b>Header band</b> (above): a full-width violet → teal gradient with the hexagon logo, in CSS only. White text reaches ≥ 5.4:1 on every stop.</li>
+        <li><b>Page</b> <code>#faf8ff</code> with white cards separated by a soft shadow and a 1px <code>#e4e0f0</code> border. No dark grey borders.</li>
+        <li><b>Score:</b> a 96px ring on the site view, with the arc in the band colour. The overview chip is bigger and bolder.</li>
+        <li><b>Stat cards:</b> an icon per type on a violet or teal tile, with a big tabular number.</li>
+        <li><b>Unchanged:</b> severity pills, the neutral "Couldn't scan" banner, EU tags and bars.</li>
       </ul>
       <div class="ds-hero-actions">
         <a class="button button-primary" href="#c-sidebar" style="text-decoration:none">See components</a>
@@ -479,10 +526,10 @@ a:hover { color: var(--text); }
       <h2><span class="ds-num">00</span>Principles</h2>
       <p class="ds-lead">Owners of small sites read this dashboard, often on a shared screen or a projector. It should be calm, legible from the back of the room, and never shout more than the finding deserves.</p>
       <div class="ds-compare">
-        <div><h5>Red means danger, only</h5><ul><li>Red is used for high severity and poor scores, nothing else.</li><li>Actions, links and the active nav item use blue.</li></ul></div>
+        <div><h5>Red means danger, only</h5><ul><li>Red is used for high severity and poor scores, nothing else.</li><li>Brand colours (violet, teal) never carry meaning about risk. Actions, links, focus and the active nav item are violet.</li></ul></div>
         <div><h5>Urgency = darkness</h5><ul><li>Severity fills get lighter as urgency drops, so the order still reads in greyscale or on a washed-out projector.</li></ul></div>
         <div><h5>Evidence is literal</h5><ul><li>URLs and snippets are always monospace on an inset surface, so it is clear what was actually seen.</li></ul></div>
-        <div><h5>Visible edges</h5><ul><li>Cards ≥ 1.5:1 against the page, outlines ≥ 3:1, 8–10px radius and 24px panel padding.</li><li>Only things you can click react to hover.</li></ul></div>
+        <div><h5>Soft edges</h5><ul><li>White cards on <code>#faf8ff</code>, separated by a violet-tinted shadow and a 1px <code>#e4e0f0</code> border. Radius is 8–10px, panel padding 24px.</li><li>Only things you can click react to hover.</li></ul></div>
       </div>
     </section>
 
@@ -498,9 +545,11 @@ a:hover { color: var(--text); }
         <div class="ds-swatch" data-token="--surface-2" data-name="Hover / quiet fill"></div>
         <div class="ds-swatch" data-token="--inset" data-name="Inset (code)"></div>
         <div class="ds-swatch" data-token="--track" data-name="Bar track"></div>
-        <div class="ds-swatch" data-token="--border" data-name="Outline (cards, controls)" data-contrast></div>
-        <div class="ds-swatch" data-token="--divider" data-name="Divider (inside cards)" data-contrast></div>
-        <div class="ds-swatch" data-token="--border-strong" data-name="Border strong" data-contrast></div>
+        <div class="ds-swatch" data-token="--border" data-name="Card border / divider"></div>
+        <div class="ds-swatch" data-token="--control-border" data-name="Control border (buttons)"></div>
+        <div class="ds-swatch" data-token="--ring-track" data-name="Score ring track"></div>
+        <div class="ds-swatch" data-token="--info-line" data-name="Severity outline (info, banner)" data-contrast></div>
+        <div class="ds-swatch" data-token="--border-strong" data-name="Banner rule" data-contrast></div>
       </div>
 
       <h3 class="ds-sub">Text</h3>
@@ -511,11 +560,17 @@ a:hover { color: var(--text); }
         <div class="ds-swatch" data-token="--link" data-name="Link" data-contrast></div>
       </div>
 
-      <h3 class="ds-sub">Accent</h3>
+      <h3 class="ds-sub">Brand layer (never red or amber)</h3>
       <div class="ds-grid" data-swatches>
-        <div class="ds-swatch" data-token="--accent" data-name="Accent (buttons, active nav)" data-contrast-white></div>
-        <div class="ds-swatch" data-token="--accent-hover" data-name="Accent hover / on soft" data-contrast-white></div>
-        <div class="ds-swatch" data-token="--accent-soft" data-name="Accent soft (fix box, active nav)"></div>
+        <div class="ds-swatch" data-token="--violet" data-name="Violet = --accent (buttons, links, focus)" data-contrast-white></div>
+        <div class="ds-swatch" data-token="--accent-hover" data-name="Accent hover" data-contrast-white></div>
+        <div class="ds-swatch" data-token="--violet-light" data-name="Violet light (hover lines)"></div>
+        <div class="ds-swatch" data-token="--violet-soft" data-name="Violet soft (tiles, active nav)"></div>
+        <div class="ds-swatch" data-token="--teal" data-name="Teal"></div>
+        <div class="ds-swatch" data-token="--teal-dark" data-name="Teal dark (icons, band end)" data-contrast-white></div>
+        <div class="ds-swatch" data-token="--teal-light" data-name="Teal light"></div>
+        <div class="ds-swatch" data-token="--teal-soft" data-name="Teal soft (tiles)"></div>
+        <div class="ds-swatch" data-token="--band-1" data-name="Band stop 1" data-contrast-white></div>
       </div>
 
       <h3 class="ds-sub">Severity ramp</h3>
@@ -539,30 +594,36 @@ a:hover { color: var(--text); }
     <!-- ===================== Contrast ===================== -->
     <section class="ds-section" id="contrast">
       <h2><span class="ds-num">02</span>Contrast checks</h2>
-      <p class="ds-lead">These are computed live from the tokens on this page, so changing a token updates the table. The targets are tuned for projectors: ≥ 1.5:1 card vs page, ≥ 3:1 for borders and graphics, ≥ 4.5:1 for text.</p>
+      <p class="ds-lead">These are computed live from the tokens on this page, so changing a token updates the table. Projector targets: body text ≥ 7:1, severity pills and other text ≥ 4.5:1, icons, arcs and bars ≥ 3:1. Card edges now come from shadow plus a light border, so there is no card-vs-page contrast row.</p>
       <div class="panel ds-scroll">
         <table class="ds-table" id="ds-contrast">
           <thead><tr><th>Pair</th><th>Sample</th><th>Tokens</th><th>Ratio</th><th>Target</th></tr></thead>
           <tbody>
-            <tr data-fg="--surface" data-bg="--bg" data-min="1.5"><td>Card vs page</td></tr>
-            <tr data-fg="--border" data-bg="--surface" data-min="3"><td>Outline vs card</td></tr>
-            <tr data-fg="--border" data-bg="--bg" data-min="3"><td>Outline vs page</td></tr>
-            <tr data-fg="--divider" data-bg="--surface" data-min="3"><td>Divider vs card</td></tr>
-            <tr data-fg="--focus" data-bg="--surface" data-min="3"><td>Focus ring vs card</td></tr>
-            <tr data-fg="--text" data-bg="--surface" data-min="4.5"><td>Body text</td></tr>
-            <tr data-fg="--muted" data-bg="--bg" data-min="4.5"><td>Muted text on page</td></tr>
-            <tr data-fg="--subtle" data-bg="--surface" data-min="4.5"><td>Labels (12px caps)</td></tr>
+            <tr data-fg="--text" data-bg="--surface" data-min="7"><td>Body text on card</td></tr>
+            <tr data-fg="--text" data-bg="--bg" data-min="7"><td>Body text on page</td></tr>
+            <tr data-fg="--muted" data-bg="--bg" data-min="7"><td>Muted text on page</td></tr>
+            <tr data-fg="--subtle" data-bg="--surface" data-min="7"><td>Labels (12px caps)</td></tr>
             <tr data-fg="--link" data-bg="--surface" data-min="4.5"><td>Link</td></tr>
+            <tr data-fg="--focus" data-bg="--surface" data-min="3"><td>Focus ring vs card</td></tr>
+            <tr data-fg="#ffffff" data-bg="--band-1" data-min="4.5"><td>Header text · band stop 1</td></tr>
+            <tr data-fg="#ffffff" data-bg="--band-2" data-min="4.5"><td>Header text · band stop 2</td></tr>
+            <tr data-fg="#ffffff" data-bg="--band-3" data-min="4.5"><td>Header text · band stop 3 (lightest)</td></tr>
             <tr data-fg="#ffffff" data-bg="--accent" data-min="4.5"><td>Primary button</td></tr>
             <tr data-fg="--accent-hover" data-bg="--accent-soft" data-min="4.5"><td>Active nav item</td></tr>
+            <tr data-fg="--violet" data-bg="--violet-soft" data-min="3"><td>Stat icon · violet tile</td></tr>
+            <tr data-fg="--teal-dark" data-bg="--teal-soft" data-min="3"><td>Stat icon · teal tile</td></tr>
             <tr data-fg="--high-on" data-bg="--high" data-min="4.5"><td>Pill · high</td></tr>
             <tr data-fg="--medium-on" data-bg="--medium" data-min="4.5"><td>Pill · medium</td></tr>
             <tr data-fg="--low-on" data-bg="--low" data-min="4.5"><td>Pill · low</td></tr>
             <tr data-fg="--info-on" data-bg="--info" data-min="4.5"><td>Pill · info</td></tr>
-            <tr data-fg="--good-on" data-bg="--good-soft" data-min="4.5"><td>Score · good</td></tr>
-            <tr data-fg="--fair-on" data-bg="--fair-soft" data-min="4.5"><td>Score · fair</td></tr>
-            <tr data-fg="--poor-on" data-bg="--poor-soft" data-min="4.5"><td>Score · poor</td></tr>
-            <tr data-fg="--none-on" data-bg="--none-soft" data-min="4.5"><td>Score · none</td></tr>
+            <tr data-fg="--info-line" data-bg="--surface" data-min="3"><td>Info pill / banner outline</td></tr>
+            <tr data-fg="--good-on" data-bg="--good-soft" data-min="4.5"><td>Score chip · good</td></tr>
+            <tr data-fg="--fair-on" data-bg="--fair-soft" data-min="4.5"><td>Score chip · fair</td></tr>
+            <tr data-fg="--poor-on" data-bg="--poor-soft" data-min="4.5"><td>Score chip · poor</td></tr>
+            <tr data-fg="--none-on" data-bg="--none-soft" data-min="4.5"><td>Score chip · none</td></tr>
+            <tr data-fg="--good" data-bg="--ring-track" data-min="3"><td>Score ring arc · good</td></tr>
+            <tr data-fg="--fair" data-bg="--ring-track" data-min="3"><td>Score ring arc · fair</td></tr>
+            <tr data-fg="--poor" data-bg="--ring-track" data-min="3"><td>Score ring arc · poor</td></tr>
             <tr data-fg="--good" data-bg="--track" data-min="3"><td>Bar · EU vs track</td></tr>
             <tr data-fg="--fair" data-bg="--track" data-min="3"><td>Bar · outside EU vs track</td></tr>
           </tbody>
@@ -623,7 +684,7 @@ a:hover { color: var(--text); }
     <!-- ===================== Elevation ===================== -->
     <section class="ds-section" id="elevation">
       <h2><span class="ds-num">05</span>Shadows</h2>
-      <p class="ds-lead">Edges come from the page/card contrast and the 3:1 outline, not from shadows. Shadows stay small and neutral, and there are no glows.</p>
+      <p class="ds-lead">Cards are separated from the <code>#faf8ff</code> page by a soft violet-tinted shadow plus a 1px <code>--border</code>. There are no glows.</p>
       <div class="ds-tiles">
         <div class="ds-tile" style="box-shadow:var(--shadow-1)"><code>--shadow-1<br>panel, card</code></div>
         <div class="ds-tile" style="box-shadow:var(--shadow-2)"><code>--shadow-2<br>popover, menu</code></div>
@@ -654,7 +715,7 @@ a:hover { color: var(--text); }
             </aside>
             <div class="ds-frame-main">
               <header class="header"><h1>Overview</h1><p class="muted">Scanned 07/11/2026, 12:05 · 4 sites</p></header>
-              <section class="cards" style="grid-template-columns:repeat(auto-fill,minmax(120px,1fr))">
+              <section class="cards" style="grid-template-columns:repeat(auto-fill,minmax(170px,1fr))">
                 <div class="card total"><div class="total-count">5</div><div class="total-label">Chatbots</div></div>
                 <div class="card total"><div class="total-count">3</div><div class="total-label">Data transfer</div></div>
                 <div class="card total"><div class="total-count">1</div><div class="total-label">Key leaks</div></div>
@@ -669,7 +730,7 @@ a:hover { color: var(--text); }
               <li><b>.shell</b> grid wrapper replacing <code>.page</code> at the top level</li>
               <li><b>.sidebar</b> sticky, full height; <b>.brand</b> + <b>.brand-mark</b></li>
               <li><b>.nav</b>, <b>.nav-section</b> (overline label), <b>.nav-item</b>, <b>.nav-count</b></li>
-              <li>Active: <b>.is-active</b> or <code>aria-current="page"</code> — <code>--accent-soft</code> fill, 3px blue left rail, bold <code>--accent-hover</code> text</li>
+              <li>Active: <b>.is-active</b> or <code>aria-current="page"</code> — <code>--accent-soft</code> fill, 3px violet left rail, bold <code>--accent-hover</code> text</li>
             </ul>
           </div>
           <pre><code><span class="tc">// App.jsx (sketch)</span>
@@ -703,8 +764,8 @@ a:hover { color: var(--text); }
           <div>
             <h5>Classes</h5>
             <ul>
-              <li><b>.button</b> — white fill, <code>--border-strong</code> outline, text colour. Hover fills <code>--surface-2</code>.</li>
-              <li><b>.button-primary</b> — solid <code>--accent</code> #1d4ed8 (6.70:1 with white), hover <code>--accent-hover</code>. No glow.</li>
+              <li><b>.button</b> — white fill, <code>--border-strong</code> outline, text colour. Hover fills <code>--surface-2</code> with a violet-light border.</li>
+              <li><b>.button-primary</b> — solid <code>--accent</code> violet #6d28d9 (7.10:1 with white), hover <code>--accent-hover</code>. No glow.</li>
               <li><b>.button-small</b> — inline (no margin), used by <code>CopyButton</code>.</li>
               <li>Focus is a 2px <code>--focus</code> outline via <code>:focus-visible</code>.</li>
             </ul>
@@ -780,7 +841,7 @@ a:hover { color: var(--text); }
     <!-- ===================== Score ===================== -->
     <section class="ds-section" id="c-score">
       <h2><span class="ds-num">10</span>Score chips</h2>
-      <p class="ds-lead">Bands come from <code>scoreBand()</code>: good ≥ 80, fair 50–79, poor &lt; 50, none when the site failed. The large size is used in the site header. No glows.</p>
+      <p class="ds-lead">Bands come from <code>scoreBand()</code>: good ≥ 80, fair 50–79, poor &lt; 50, none when the site failed. Chips are used in the overview table, now bigger and bolder. The site view uses the 96px ring instead of the large chip.</p>
       <div class="ds-demo">
         <div class="ds-stage is-row">
           <span class="ds-label">Regular</span>
@@ -796,18 +857,34 @@ a:hover { color: var(--text); }
           <span class="score score-poor score-large">37</span>
           <span class="score score-none score-large">Couldn't scan</span>
         </div>
+        <div class="ds-stage ds-ring-row">
+          <span class="ds-label">Ring · site view (new)</span>
+          <span class="score-ring ring-good" style="--score:92" role="img" aria-label="Score 92 out of 100"><b>92</b></span>
+          <span class="score-ring ring-fair" style="--score:62" role="img" aria-label="Score 62 out of 100"><b>62</b></span>
+          <span class="score-ring ring-poor" style="--score:37" role="img" aria-label="Score 37 out of 100"><b>37</b></span>
+          <span class="score-ring ring-none" role="img" aria-label="Couldn't scan"><b>Couldn't scan</b></span>
+        </div>
         <div class="ds-doc">
           <div>
             <h5>Classes</h5>
             <ul>
               <li><b>.score</b> + <b>.score-good | -fair | -poor | -none</b></li>
-              <li><b>.score-large</b> — 1.75rem, 14px radius</li>
+              <li><b>.score</b> chip — 1.0625rem, weight 800, min-width 56px</li>
+              <li><b>.score-large</b> — kept for compatibility; the site view should switch to the ring</li>
+              <li><b>.score-ring.ring-{band}</b> — 96px, <code>conic-gradient</code> arc sized by the <code>--score</code> custom property (0–100), arc colour from the band, number inside. <b>Needs JSX.</b></li>
               <li>Good = green, fair = amber, poor = red, none = grey: soft fill, dark <code>-on</code> text, full-strength border</li>
             </ul>
           </div>
           <pre><code>&lt;Score score={s.score} /&gt;
 &lt;Score score={site.score} large /&gt;
-<span class="tc">// → score score-{band}[ score-large]</span></code></pre>
+<span class="tc">// → score score-{band}[ score-large]</span>
+
+<span class="tc">// new: site view ring</span>
+&lt;span className={<span class="ta">`score-ring ring-${scoreBand(score)}`</span>}
+  style={{ <span class="ta">"--score"</span>: score ?? 0 }}
+  role=<span class="ta">"img"</span> aria-label={…}&gt;
+  &lt;b&gt;{score ?? <span class="ta">"Couldn't scan"</span>}&lt;/b&gt;
+&lt;/span&gt;</code></pre>
         </div>
       </div>
     </section>
@@ -815,7 +892,7 @@ a:hover { color: var(--text); }
     <!-- ===================== Stat cards ===================== -->
     <section class="ds-section" id="c-cards">
       <h2><span class="ds-num">11</span>Stat cards</h2>
-      <p class="ds-lead">One per finding type across the top of the overview. They can't be clicked, so they have no hover state, glow or pointer cursor.</p>
+      <p class="ds-lead">One per finding type across the top of the overview. Each has an icon on a violet or teal brand tile and a big tabular number. The icon comes from <code>.total::before</code> and <code>:nth-child</code> in <code>TYPES</code> order, so no markup changes. The cards can't be clicked, so there is no hover state.</p>
       <div class="ds-demo">
         <div class="ds-stage">
           <section class="cards" aria-label="Findings by type" style="margin-bottom:0">
@@ -831,7 +908,9 @@ a:hover { color: var(--text); }
             <h5>Classes</h5>
             <ul>
               <li><b>.cards</b> — 5 columns, 2 under 800px, 1 under 640px</li>
-              <li><b>.card.total</b>, <b>.total-count</b> (tabular nums), <b>.total-label</b></li>
+              <li><b>.card.total</b>, <b>.total-count</b> (2rem, 800, tabular nums), <b>.total-label</b></li>
+              <li>Tile + icon: <b>.total::before</b>; colours via <code>--tile</code> / <code>--icon</code> set per <code>:nth-child</code>. Chatbots, key leaks and agent ready are violet; data transfer and disclosure are teal.</li>
+              <li>Optional hardening: add <code>data-type={t.key}</code> and switch the selectors to <code>[data-type]</code></li>
               <li>No <code>:hover</code> rule: only clickable things react to the pointer</li>
             </ul>
           </div>
@@ -895,7 +974,7 @@ a:hover { color: var(--text); }
     <!-- ===================== Sites table ===================== -->
     <section class="ds-section" id="c-table">
       <h2><span class="ds-num">13</span>Sites table</h2>
-      <p class="ds-lead">Overline column headers, row hover on <code>--surface-2</code> (rows are clickable), and a 2px blue outline on keyboard focus. Only the Score, High and Medium cells use tabular nums. Below 640px every row becomes a stacked card using the existing <code>data-label</code> attributes.</p>
+      <p class="ds-lead">Overline column headers, row hover on <code>--surface-2</code> (rows are clickable), and a 2px violet outline on keyboard focus. Only the Score, High and Medium cells use tabular nums. Below 640px every row becomes a stacked card using the existing <code>data-label</code> attributes.</p>
       <div class="ds-demo">
         <div class="ds-stage">
           <section class="panel">
@@ -933,20 +1012,20 @@ a:hover { color: var(--text); }
     <!-- ===================== Site head ===================== -->
     <section class="ds-section" id="c-sitehead">
       <h2><span class="ds-num">14</span>Site header</h2>
-      <p class="ds-lead">Top of the single-site view: back button, then a panel with the domain, final URL and the large score.</p>
+      <p class="ds-lead">Top of the single-site view: back button, then a panel with the domain, final URL and the 96px score ring.</p>
       <div class="ds-demo">
         <div class="ds-stage">
           <button type="button" class="button" style="margin-bottom:16px">← Back to all sites</button>
           <section class="panel site-head">
             <div><h2>localhost:8765</h2><a href="#c-sitehead">http://localhost:8765/</a></div>
-            <span class="score score-poor score-large">37</span>
+            <span class="score-ring ring-poor" style="--score:37" role="img" aria-label="Score 37 out of 100"><b>37</b></span>
           </section>
         </div>
         <div class="ds-doc">
-          <div><h5>Classes</h5><ul><li><b>.panel.site-head</b> — flex, space-between, wraps</li><li><b>.site-head h2</b> 1.5rem</li><li>Final URL is a normal <b>a</b> in <code>--link</code> blue</li></ul></div>
+          <div><h5>Classes</h5><ul><li><b>.panel.site-head</b> — flex, space-between, wraps</li><li><b>.site-head h2</b> 1.5rem</li><li>Final URL is a normal <b>a</b> in <code>--link</code> violet</li></ul></div>
           <pre><code>&lt;section className=<span class="ta">"panel site-head"</span>&gt;
   &lt;div&gt;&lt;h2&gt;{site.site}&lt;/h2&gt;&lt;a …/&gt;&lt;/div&gt;
-  &lt;Score score={site.score} large /&gt;
+  &lt;ScoreRing score={site.score} /&gt; <span class="tc">// was &lt;Score large/&gt;</span>
 &lt;/section&gt;</code></pre>
         </div>
       </div>
@@ -955,7 +1034,7 @@ a:hover { color: var(--text); }
     <!-- ===================== Finding cards ===================== -->
     <section class="ds-section" id="c-finding">
       <h2><span class="ds-num">15</span>Finding cards</h2>
-      <p class="ds-lead">Title, severity pill and method badge; then evidence on an inset mono surface; then the blue-tinted "What to tell your web person" box with a Copy button. Keys are always masked in the snippet.</p>
+      <p class="ds-lead">Title, severity pill and method badge; then evidence on an inset mono surface; then the "What to tell your web person" box, which has a violet left rule and a Copy button. Keys are always masked in the snippet.</p>
       <div class="ds-demo">
         <div class="ds-stage">
           <section class="group">
@@ -1012,7 +1091,7 @@ a:hover { color: var(--text); }
               <li><b>.group</b> › <b>h3</b> › <b>article.card.finding</b></li>
               <li><b>.finding-head</b> (h4 + <b>.badges</b>), stacks under 640px</li>
               <li><b>.evidence</b> › <b>.evidence-label</b> (overline), link/span in mono, <b>pre.snippet</b> on <code>--inset</code></li>
-              <li><b>.fix</b> — <code>--accent-soft</code> fill, accent outline with a 4px left edge; <b>.fix-head</b> holds title + <code>CopyButton</code></li>
+              <li><b>.fix</b> — <code>--surface-2</code> fill, light border, 4px violet left rule; <b>.fix-head</b> holds title + <code>CopyButton</code></li>
               <li>The fix box is omitted when <code>f.fix</code> is empty</li>
             </ul>
           </div>
@@ -1059,7 +1138,10 @@ a:hover { color: var(--text); }
           <thead><tr><th>Change</th><th>Where</th><th>Effort</th></tr></thead>
           <tbody>
             <tr><td>Replace tokens and component rules</td><td><code>dashboard/src/styles.css</code> → contents of <a href="#stylesheet">#app-css</a></td><td>Swap only, same class names</td></tr>
-            <tr><td>Severity ramp, neutral banner, no stat-card hover</td><td>CSS only</td><td>None</td></tr>
+            <tr><td>Severity ramp, neutral banner, EU bars</td><td>Unchanged from v0.2, CSS only</td><td>None</td></tr>
+            <tr><td>Header band + hexagon logo</td><td><code>.header</code> breaks out of <code>.page</code> with <code>calc(50% - 50vw)</code> margins; logo is <code>h1::before</code> with a mask</td><td>None (CSS only). Optional: move <code>&lt;header&gt;</code> above <code>.page</code> and drop the vw trick</td></tr>
+            <tr><td>Stat card icons</td><td><code>.total::before</code> + <code>:nth-child</code> in <code>TYPES</code> order</td><td>None. Optional <code>data-type</code> attribute for robustness</td></tr>
+            <tr><td>Score ring on the site view</td><td>New <code>ScoreRing</code> (or <code>Score ring</code> prop) rendering <code>.score-ring.ring-{band}</code> with <code>style={{"--score": score}}</code></td><td><b>JSX change</b>, small</td></tr>
             <tr><td>Tabular nums on number cells only</td><td><code>td[data-label="Score|High|Medium"]</code> selectors on existing attributes</td><td>None</td></tr>
             <tr><td>Primary button</td><td>Add <code>button-primary</code> where a main action exists</td><td>Optional</td></tr>
             <tr><td>Sidebar nav</td><td>Wrap the app in <code>.shell</code>, add <code>aside.sidebar</code>; move <code>.header</code> into the main column</td><td>Small JSX change, optional</td></tr>
@@ -1079,7 +1161,7 @@ a:hover { color: var(--text); }
       </div>
     </section>
 
-    <footer class="ds-footer">AI Exposure Scan · design system proposal v0.2 · self-contained, no external requests. Open this file directly in a browser.</footer>
+    <footer class="ds-footer">AI Exposure Scan · design system proposal v0.3 · self-contained, no external requests. Open this file directly in a browser.</footer>
   </main>
 </div>
 <script>
