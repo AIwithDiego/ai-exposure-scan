@@ -1,0 +1,48 @@
+{
+  "site": "localhost:8765",
+  "url": "http://localhost:8765/",
+  "final_url": "http://localhost:8765/",
+  "fetched_at": "2026-11-07T12:00:00Z",
+  "status": 200,
+  "error": null,
+  "html": "<!doctype html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n  <title>Bella's Café · Dublin 8</title>\n  <link rel=\"stylesheet\" href=\"/style.css\">\n  <!-- FIXTURE: fake café site for AI Exposure Scan demos and tests. Every finding type is planted on purpose. -->\n  <script>\n    // Planted chatbot: Intercom config (detected via inline marker, no real Intercom call is made)\n    window.intercomSettings = {\n      app_id: \"demo123\",\n      greeting: \"Hi! I'm Bella, how can I help with your order today?\",\n      botName: \"Bella\"\n    };\n  </script>\n</head>\n<body>\n  <header>\n    <h1>Bella's Café</h1>\n    <p>Flat whites, sourdough and the best scones in Dublin 8.</p>\n  </header>\n  <main>\n    <section>\n      <h2>Order ahead</h2>\n      <p>Tell us what you fancy and we'll have it ready. Our menu assistant can suggest something.</p>\n      <button id=\"suggest\">Suggest something</button>\n      <p id=\"suggestion\"></p>\n    </section>\n    <section>\n      <h2>Opening hours</h2>\n      <p>Mon to Fri 07:30 to 17:00 · Sat and Sun 09:00 to 16:00</p>\n    </section>\n  </main>\n  <footer>\n    <a href=\"/privacy.html\">Privacy policy</a> · <a href=\"/llms.txt\">llms.txt</a>\n  </footer>\n  <script src=\"/js/menu-assistant.js\"></script>\n</body>\n</html>\n",
+  "page_text": "Bella's Café\n\nFlat whites, sourdough and the best scones in Dublin 8.\n\nOrder ahead\n\nTell us what you fancy and we'll have it ready. Our menu assistant can suggest something.\n\nSuggest something\n\nOpening hours\n\nMon to Fri 07:30 to 17:00 · Sat and Sun 09:00 to 16:00\n\nPrivacy policy · llms.txt",
+  "scripts": [
+    {
+      "src": "http://localhost:8765/js/menu-assistant.js",
+      "inline": false,
+      "content": "// FIXTURE: planted key leak. This key is FAKE and does not work. It exists so the scanner has something to find.\nconst OPENAI_KEY = \"sk-proj-DEMO0000FAKE0000NOTAREALKEY0000cafe\";\n\ndocument.getElementById(\"suggest\").addEventListener(\"click\", async () => {\n  // Never actually called by the scanner (we never click anything).\n  const res = await fetch(\"https://api.openai.com/v1/chat/completions\", {\n    method: \"POST\",\n    headers: { \"Authorization\": \"Bearer \" + OPENAI_KEY, \"Content-Type\": \"application/json\" },\n    body: JSON.stringify({ model: \"gpt-4o-mini\", messages: [{ role: \"user\", content: \"Suggest a café treat\" }] })\n  });\n  const data = await res.json();\n  document.getElementById(\"suggestion\").textContent = data.choices[0].message.content;\n});\n"
+    },
+    {
+      "src": null,
+      "inline": true,
+      "content": "\n    // Planted chatbot: Intercom config (detected via inline marker, no real Intercom call is made)\n    window.intercomSettings = {\n      app_id: \"demo123\",\n      greeting: \"Hi! I'm Bella, how can I help with your order today?\",\n      botName: \"Bella\"\n    };\n  "
+    }
+  ],
+  "requests": [
+    {
+      "url": "http://localhost:8765/",
+      "domain": "localhost",
+      "method": "GET",
+      "resource_type": "document"
+    },
+    {
+      "url": "http://localhost:8765/style.css",
+      "domain": "localhost",
+      "method": "GET",
+      "resource_type": "stylesheet"
+    },
+    {
+      "url": "http://localhost:8765/js/menu-assistant.js",
+      "domain": "localhost",
+      "method": "GET",
+      "resource_type": "script"
+    }
+  ],
+  "robots_txt": "User-agent: *\nAllow: /\n\nUser-agent: GPTBot\nDisallow: /\n\nUser-agent: CCBot\nDisallow: /\n",
+  "llms_txt": "# Bella's Café\n> Neighbourhood café in Dublin 8. Coffee, sourdough, scones.\n\n- Menu: /index.html\n- Opening hours: Mon to Fri 07:30 to 17:00, Sat and Sun 09:00 to 16:00\n- MCP server for ordering: https://bellas-cafe.example/mcp\n",
+  "privacy_policy": {
+    "url": "http://localhost:8765/privacy.html",
+    "text": "Privacy policy\n\nBella's Café respects your privacy. We collect your name and email when you order ahead, and use them only to prepare your order.\n\nWe use Intercom to answer customer messages on our website.\n\nWe keep order records for 12 months for accounting purposes. You can ask us to delete your data at any time by emailing hello@bellas-cafe.example.\n\nOur website uses cookies to remember your basket."
+  }
+}
