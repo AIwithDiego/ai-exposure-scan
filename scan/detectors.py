@@ -28,6 +28,7 @@ COUNTRY_NAMES = {
     "SE": "Sweden", "CH": "Switzerland", "NO": "Norway", "IS": "Iceland", "AU": "Australia",
     "NZ": "New Zealand", "SG": "Singapore", "JP": "Japan", "IN": "India", "CN": "China",
     "HK": "Hong Kong", "IL": "Israel", "BR": "Brazil", "ZA": "South Africa", "KR": "South Korea",
+    "AR": "Argentina",
 }
 EU_COUNTRIES = {
     "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE", "GR", "HU", "IE",
