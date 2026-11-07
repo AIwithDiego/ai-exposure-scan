@@ -4,6 +4,7 @@ import re
 import shutil
 import sys
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import pytest
 
@@ -371,6 +372,16 @@ def test_social_embeds_are_not_ad_pixels():
     assert [(s["name"], s["category"]) for s in f["meta"]["services"]] == [
         ("Facebook", "social"), ("Meta Pixel", "ads"), ("LinkedIn", "social"),
         ("LinkedIn Insight", "ads"), ("TikTok", "social")]
+
+
+def test_pixel_beacons_on_social_domains_are_not_social_services():
+    raw = services_raw("connect.facebook.net", "snap.licdn.com")
+    raw["requests"] += [{"url": u, "domain": urlsplit(u).hostname, "method": "GET", "resource_type": "image"}
+                        for u in ("https://www.facebook.com/tr?id=1&ev=PageView",
+                                  "https://www.linkedin.com/li/track?pid=1")]
+    [f] = detectors.services(raw, [])
+    assert [s["name"] for s in f["meta"]["services"]] == ["Meta Pixel", "LinkedIn Insight"]
+    assert f["meta"]["outside_eu_count"] == 2
 
 
 def test_own_domain_requests_ignored():

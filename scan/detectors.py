@@ -296,8 +296,14 @@ def _matches_domain(host, domain):
     return host == domain or host.endswith("." + domain)
 
 
-def _service_for(host):
-    return next((s for s in SERVICES if any(_matches_domain(host, m) for m in s["match"])), None)
+def _service_match(host, path, m):
+    domain, _, prefix = m.partition("/")
+    return _matches_domain(host, domain) and (not prefix or path.startswith("/" + prefix))
+
+
+def _service_for(host, path=""):
+    """First services.json entry matching host (and path, for "domain/path" match strings)."""
+    return next((s for s in SERVICES if any(_service_match(host, path, m) for m in s["match"])), None)
 
 
 SHARED_DOMAINS = {"googleapis.com", "gstatic.com", "amazonaws.com", "cloudfront.net"}
@@ -317,22 +323,24 @@ def _is_vendor_host(host, vendors):
     return False
 
 
-def _third_party_hosts(raw):
-    """Hosts the page contacted (request domains and script src hosts), in first-seen order.
+def _contacted(raw):
+    """(host, path) pairs the page contacted (requests and script src URLs), in first-seen order.
     A script tag that was never fetched (e.g. held back by a consent banner) doesn't count."""
-    hosts = []
+    pairs = []
     requested = set()
     for r in raw.get("requests") or []:
-        hosts.append(r.get("domain") or urlsplit(r.get("url") or "").hostname or "")
+        parts = urlsplit(r.get("url") or "")
+        pairs.append((r.get("domain") or parts.hostname or "", parts.path))
         requested.add(r.get("url"))
     for s in raw.get("scripts") or []:
         if s.get("src") and (s.get("content") is not None or s["src"] in requested):
-            hosts.append(urlsplit(s["src"]).hostname or "")
+            parts = urlsplit(s["src"])
+            pairs.append((parts.hostname or "", parts.path))
     seen = []
-    for h in hosts:
-        h = h.lower().strip("[]").rstrip(".")
-        if h and h not in seen:
-            seen.append(h)
+    for h, path in pairs:
+        pair = (h.lower().strip("[]").rstrip("."), path or "/")
+        if pair[0] and pair not in seen:
+            seen.append(pair)
     return seen
 
 
@@ -343,13 +351,14 @@ def services(raw, vendors_found):
     found_names = {cf["meta"]["vendor"] for cf in vendors_found}
     found_vendors = [v for v in VENDORS if short_name(v["name"]) in found_names]
     found, domains, unknown = {}, [], []
-    for host in _third_party_hosts(raw):
+    for host, path in _contacted(raw):
         if registrable_domain(host) == own or _is_vendor_host(host, found_vendors):
             continue
-        svc = _service_for(host)
+        svc = _service_for(host, path)
         if svc:
             found.setdefault(svc["name"], svc)
-            domains.append(host)
+            if host not in domains:
+                domains.append(host)
         elif not _is_vendor_host(host, VENDORS):
             reg = registrable_domain(host)
             if reg not in unknown:
