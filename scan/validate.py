@@ -72,10 +72,14 @@ def validate(data):
         if not isinstance(s, dict):
             problems.append(f"sites[{i}] is not an object")
             continue
-        name = s.get("site", f"sites[{i}]")
+        name = s.get("site") or f"sites[{i}]"
         missing = SITE_KEYS - s.keys()
         if missing:
             problems.append(f"{name}: missing {sorted(missing)}")
+        if not isinstance(s.get("site"), str) or not s.get("site").strip():
+            problems.append(f"{name}: site must be a non-empty string")
+        if isinstance(s.get("final_url"), str) and key_spans(s["final_url"]):
+            problems.append(f"{name}: final_url contains an unmasked key")
         findings = s.get("findings")
         if not isinstance(findings, list):
             problems.append(f"{name}: findings must be a list")
@@ -86,8 +90,9 @@ def validate(data):
                 problems.append(f"{name}: score must be null when error is set")
         elif not isinstance(score, int) or isinstance(score, bool) or not 0 <= score <= 100:
             problems.append(f"{name}: score {score!r} is not an integer 0-100")
-        elif score != compute_score(findings):
-            problems.append(f"{name}: score {score} doesn't match the formula ({compute_score(findings)})")
+        elif score != compute_score([f for f in findings if isinstance(f, dict)]):
+            expected = compute_score([f for f in findings if isinstance(f, dict)])
+            problems.append(f"{name}: score {score} doesn't match the formula ({expected})")
         for j, f in enumerate(findings):
             problems += _finding_problems(f, name, f"{name} findings[{j}]")
             fid = f.get("id") if isinstance(f, dict) else None
