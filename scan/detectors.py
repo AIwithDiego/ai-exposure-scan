@@ -250,7 +250,7 @@ def _crawler_rules(raw):
             not_mentioned.append(c["agent"])
             continue
         rules = [r for i in idxs for r in groups[i][1]]
-        if ("disallow", "/") in rules:
+        if ("disallow", "/") in rules and ("allow", "/") not in rules:
             blocked.append(c["agent"])
         else:
             allowed.append(c["agent"])

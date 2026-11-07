@@ -230,3 +230,8 @@ def _crawler_meta(robots):
 def test_crawler_rules_combine_groups():
     meta = _crawler_meta("User-agent: GPTBot\nAllow: /menu\n\nUser-agent: *\nAllow: /\n\nUser-agent: GPTBot\nDisallow: /\n")
     assert "GPTBot" in meta["blocked"] and "GPTBot" not in meta["allowed"]
+
+
+def test_allow_root_beats_disallow_root():
+    meta = _crawler_meta("User-agent: GPTBot\nDisallow: /\nAllow: /\n")
+    assert "GPTBot" in meta["allowed"] and "GPTBot" not in meta["blocked"]
