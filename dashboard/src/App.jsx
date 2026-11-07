@@ -49,7 +49,10 @@ function scoreBand(score) {
 function Score({ score, large }) {
   const empty = score === null || score === undefined;
   return (
-    <span className={`score score-${scoreBand(score)}${large ? " score-large" : ""}`}>
+    <span
+      className={`score score-${scoreBand(score)}${large ? " score-large" : ""}`}
+      style={large && !empty ? { "--score": score } : undefined}
+    >
       {empty ? "Couldn't scan" : score}
     </span>
   );
@@ -85,7 +88,7 @@ function Overview({ data, onSelect }) {
     <>
       <section className="cards" aria-label="Findings by type">
         {TYPES.map((t) => (
-          <div className="card total" key={t.key}>
+          <div className="card total" data-type={t.key} key={t.key}>
             <div className="total-count">{all.filter((f) => f.type === t.key).length}</div>
             <div className="total-label">{t.label}</div>
           </div>
@@ -250,7 +253,7 @@ function FindingCard({ f, site }) {
   const isLink = /^https?:\/\//.test(where);
   const judged = f.method === "judged";
   return (
-    <article className="card finding">
+    <article className="card finding" data-severity={f.severity}>
       <div className="finding-head">
         <h4>{f.title}</h4>
         <div className="badges">
