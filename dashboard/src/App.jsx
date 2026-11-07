@@ -150,8 +150,8 @@ function Overview({ data, onSelect }) {
                 >
                   <td data-label="Site" className="site-name">{s.site}</td>
                   <td data-label="Score"><Score score={s.score} /></td>
-                  <td data-label="High">{countSeverity(findings, "high")}</td>
-                  <td data-label="Medium">{countSeverity(findings, "medium")}</td>
+                  <td data-label="High">{s.error ? "–" : countSeverity(findings, "high")}</td>
+                  <td data-label="Medium">{s.error ? "–" : countSeverity(findings, "medium")}</td>
                   <td data-label="Most important" className="worst">
                     {s.error ? <span className="muted">{s.error}</span> : worst ? worst.title : <span className="muted">Nothing found</span>}
                   </td>
@@ -242,7 +242,7 @@ function SiteView({ site, onBack }) {
           We couldn't scan this site: {site.error}
         </div>
       )}
-      {TYPES.map((t) => {
+      {!site.error && TYPES.map((t) => {
         const group = findings.filter((f) => f.type === t.key).sort(bySeverity);
         return (
           <section className="group" key={t.key}>
@@ -250,7 +250,7 @@ function SiteView({ site, onBack }) {
             {group.length === 0 ? (
               <p className="muted">Nothing found</p>
             ) : (
-              group.map((f) => <FindingCard f={f} key={f.id} />)
+              group.map((f, i) => <FindingCard f={f} key={f.id || `${t.key}-${i}`} />)
             )}
           </section>
         );
