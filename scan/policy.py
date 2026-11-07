@@ -314,10 +314,12 @@ def run(raw_dir, findings_path):
         if entry is None:
             entry = {"site": raw["site"], "final_url": raw.get("final_url"), "status": raw.get("status"),
                      "error": raw.get("error"), "score": None, "findings": []}
-            if raw.get("label"):
-                entry["label"] = raw["label"]
             data["sites"].append(entry)
             by_site[raw["site"]] = entry
+        if raw.get("label"):
+            entry["label"] = mask_all_keys(raw["label"])
+        else:
+            entry.pop("label", None)
         kept = [f for f in entry.get("findings", []) if not _is_ours(f)]
         new = judge(raw, kept, ask)
         entry["findings"] = merge_findings(kept, new)
