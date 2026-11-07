@@ -336,7 +336,7 @@ def test_registrable_domain():
 def test_services_one_aggregated_finding():
     raw = services_raw("js.hs-scripts.com", "js.hs-analytics.net", "www.google-analytics.com",
                        "plausible.io", "www.bellas.example", "cdn.bellas.example", "static.unknown-cdn.example")
-    raw["scripts"] = [{"src": "https://www.googletagmanager.com/gtag/js?id=G-1", "inline": False, "content": None}]
+    raw["scripts"] = [{"src": "https://www.googletagmanager.com/gtag/js?id=G-1", "inline": False, "content": ""}]
     found = detectors.services(raw, [])
     assert len(found) == 1
     [f] = found
@@ -356,6 +356,21 @@ def test_services_one_aggregated_finding():
 def test_services_eu_only_is_info():
     [f] = detectors.services(services_raw("plausible.io"), [])
     assert f["severity"] == "info" and f["meta"]["outside_eu_count"] == 0
+
+
+def test_services_skip_scripts_never_fetched():
+    raw = services_raw("plausible.io")
+    raw["scripts"] = [{"src": "https://www.googletagmanager.com/gtag/js?id=G-1", "inline": False, "content": None}]
+    [f] = detectors.services(raw, [])
+    assert [s["name"] for s in f["meta"]["services"]] == ["Plausible"]
+
+
+def test_social_embeds_are_not_ad_pixels():
+    [f] = detectors.services(services_raw("www.facebook.com", "connect.facebook.net", "platform.linkedin.com",
+                                          "snap.licdn.com", "www.tiktok.com"), [])
+    assert [(s["name"], s["category"]) for s in f["meta"]["services"]] == [
+        ("Facebook", "social"), ("Meta Pixel", "ads"), ("LinkedIn", "social"),
+        ("LinkedIn Insight", "ads"), ("TikTok", "social")]
 
 
 def test_own_domain_requests_ignored():

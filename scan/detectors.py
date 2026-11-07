@@ -318,12 +318,15 @@ def _is_vendor_host(host, vendors):
 
 
 def _third_party_hosts(raw):
-    """Hosts the page contacted (request domains and script src hosts), in first-seen order."""
+    """Hosts the page contacted (request domains and script src hosts), in first-seen order.
+    A script tag that was never fetched (e.g. held back by a consent banner) doesn't count."""
     hosts = []
+    requested = set()
     for r in raw.get("requests") or []:
         hosts.append(r.get("domain") or urlsplit(r.get("url") or "").hostname or "")
+        requested.add(r.get("url"))
     for s in raw.get("scripts") or []:
-        if s.get("src"):
+        if s.get("src") and (s.get("content") is not None or s["src"] in requested):
             hosts.append(urlsplit(s["src"]).hostname or "")
     seen = []
     for h in hosts:
