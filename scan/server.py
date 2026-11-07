@@ -29,6 +29,7 @@ DIST = Path(__file__).resolve().parent.parent / "dashboard" / "dist"
 SCAN_TIMEOUT = 60  # seconds
 FIXTURE_HOSTS = {"localhost", "127.0.0.1"}
 FIXTURE_PORT = 8765
+VITE_DEV_ORIGIN = "http://localhost:5173"
 MAX_BODY = 8 * 1024
 MAX_URL = 2048
 MAX_LABEL = 80
@@ -259,6 +260,14 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if self._path() != "/api/scan":
             return self._text(404, "Not found")
+        origin = self.headers.get("Origin")
+        if origin is not None and origin not in self._allowed_origins():
+            self.close_connection = True
+            return self._text(403, "Scans can only be started from the dashboard.")
+        media_type = (self.headers.get("Content-Type") or "").split(";")[0].strip().lower()
+        if media_type != "application/json":
+            self.close_connection = True
+            return self._text(415, "Send the scan request as application/json.")
         try:
             length = int(self.headers.get("Content-Length") or 0)
         except ValueError:
@@ -289,6 +298,10 @@ class Handler(BaseHTTPRequestHandler):
                   file=sys.stderr, flush=True)
             return self._text(500, "The scan finished but the results didn't pass the format check.")
         return self._json(200, entry)
+
+    def _allowed_origins(self):
+        port = self.server.server_address[1]
+        return {f"http://localhost:{port}", f"http://127.0.0.1:{port}", VITE_DEV_ORIGIN}
 
     def do_PUT(self):
         self._text(405, "Method not allowed")

@@ -67,9 +67,10 @@ def strict_api(tmp_path):
     httpd.server_close()
 
 
-def post(base, body, timeout=90):
-    data = json.dumps(body).encode("utf-8")
-    req = urllib.request.Request(f"{base}/api/scan", data=data, headers={"Content-Type": "application/json"})
+def post(base, body, timeout=90, headers=None):
+    data = body if isinstance(body, bytes) else json.dumps(body).encode("utf-8")
+    req = urllib.request.Request(f"{base}/api/scan", data=data,
+                                 headers={"Content-Type": "application/json", **(headers or {})})
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
             return r.status, r.read().decode("utf-8")
@@ -189,10 +190,7 @@ def test_findings_and_static_fallback(strict_api):
 
 
 def test_bad_bodies(strict_api):
-    req = urllib.request.Request(f"{strict_api}/api/scan", data=b"not json")
-    with pytest.raises(urllib.error.HTTPError) as err:
-        urllib.request.urlopen(req, timeout=10)
-    assert err.value.code == 400
+    assert post(strict_api, b"not json")[0] == 400
     assert post(strict_api, ["example.ie"])[0] == 400
 
 
@@ -215,3 +213,36 @@ def test_failed_load_masks_keys_in_error(tmp_path, monkeypatch):
     finally:
         httpd.shutdown()
         httpd.server_close()
+
+
+@pytest.mark.parametrize("ctype", [None, "text/plain", "application/x-www-form-urlencoded", "multipart/form-data"])
+def test_scan_needs_json_content_type(strict_api, tmp_path, ctype):
+    import http.client
+
+    host, port = strict_api.removeprefix("http://").split(":")
+    conn = http.client.HTTPConnection(host, int(port), timeout=10)
+    headers = {"Content-Type": ctype} if ctype else {}
+    conn.request("POST", "/api/scan", body=b'{"url": "example.ie"}', headers=headers)
+    resp = conn.getresponse()
+    assert resp.status == 415 and resp.read().strip()
+    conn.close()
+    assert not (tmp_path / "out" / "findings.json").exists()
+
+
+def test_json_content_type_with_charset_is_accepted(strict_api):
+    code, _ = post(strict_api, {"url": "ftp://x/"}, headers={"Content-Type": "application/json; charset=utf-8"})
+    assert code == 400  # past the 415 check, rejected for the scheme
+
+
+@pytest.mark.parametrize("origin", ["https://evil.example", "http://localhost:9999", "null", "http://127.0.0.1:5173"])
+def test_scan_rejects_foreign_origin(strict_api, tmp_path, origin):
+    code, body = post(strict_api, {"url": "example.ie"}, headers={"Origin": origin})
+    assert code == 403 and body.strip()
+    assert not (tmp_path / "out" / "findings.json").exists()
+
+
+def test_scan_allows_dashboard_origins(api, fixture_port):
+    port = api.rsplit(":", 1)[1]
+    for origin in (f"http://localhost:{port}", f"http://127.0.0.1:{port}", "http://localhost:5173"):
+        assert post(api, {"url": "ftp://x/"}, headers={"Origin": origin})[0] == 400
+    assert post(api, {"url": f"http://localhost:{fixture_port}/"}, headers={"Origin": "http://localhost:5173"})[0] == 200
