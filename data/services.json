@@ -1,5 +1,5 @@
 {
-  "_note": "Common third-party services a page loads. country = company headquarters, not where a given customer's data is hosted. Always say 'likely'. match = domains; a request or script host matches if it equals one or is a subdomain of one. category is one of analytics, ads, crm, social, video, fonts, cdn, consent, payments, maps.",
+  "_note": "Common third-party services a page loads. country = company headquarters, not where a given customer's data is hosted. Always say 'likely'. match = domains; a request or script host matches if it equals one or is a subdomain of one; the first matching entry wins, so specific pixel hosts come before the broad social domains. category is one of analytics, ads, crm, social, video, fonts, cdn, consent, payments, maps.",
   "services": [
     { "name": "Google Analytics",   "country": "US", "eu": false, "category": "analytics", "match": ["google-analytics.com", "analytics.google.com"] },
     { "name": "Google Tag Manager", "country": "US", "eu": false, "category": "analytics", "match": ["googletagmanager.com"] },
@@ -7,9 +7,12 @@
     { "name": "Google Fonts",       "country": "US", "eu": false, "category": "fonts",     "match": ["fonts.googleapis.com", "fonts.gstatic.com"] },
     { "name": "Google Maps",        "country": "US", "eu": false, "category": "maps",      "match": ["maps.googleapis.com", "maps.gstatic.com", "maps.google.com"] },
     { "name": "YouTube",            "country": "US", "eu": false, "category": "video",     "match": ["youtube.com", "youtube-nocookie.com", "ytimg.com", "googlevideo.com"] },
-    { "name": "Meta Pixel",         "country": "US", "eu": false, "category": "ads",       "match": ["connect.facebook.net", "facebook.com", "facebook.net"] },
-    { "name": "LinkedIn Insight",   "country": "US", "eu": false, "category": "ads",       "match": ["snap.licdn.com", "px.ads.linkedin.com", "linkedin.com", "licdn.com"] },
-    { "name": "TikTok Pixel",       "country": "SG", "eu": false, "category": "ads",       "match": ["analytics.tiktok.com", "tiktok.com", "ttwstatic.com"] },
+    { "name": "Meta Pixel",         "country": "US", "eu": false, "category": "ads",       "match": ["connect.facebook.net"] },
+    { "name": "Facebook",           "country": "US", "eu": false, "category": "social",    "match": ["facebook.com", "facebook.net", "fbcdn.net"] },
+    { "name": "LinkedIn Insight",   "country": "US", "eu": false, "category": "ads",       "match": ["snap.licdn.com", "px.ads.linkedin.com"] },
+    { "name": "LinkedIn",           "country": "US", "eu": false, "category": "social",    "match": ["linkedin.com", "licdn.com"] },
+    { "name": "TikTok Pixel",       "country": "SG", "eu": false, "category": "ads",       "match": ["analytics.tiktok.com"] },
+    { "name": "TikTok",             "country": "SG", "eu": false, "category": "social",    "match": ["tiktok.com", "ttwstatic.com", "tiktokcdn.com"] },
     { "name": "X (Twitter)",        "country": "US", "eu": false, "category": "social",    "match": ["platform.twitter.com", "static.ads-twitter.com", "analytics.twitter.com", "ads-twitter.com", "twitter.com", "twimg.com", "x.com"] },
     { "name": "Pinterest",          "country": "US", "eu": false, "category": "social",    "match": ["pinterest.com", "pinimg.com"] },
     { "name": "Hotjar",             "country": "MT", "eu": true,  "category": "analytics", "match": ["hotjar.com", "hotjar.io"] },
