@@ -36,7 +36,7 @@ FIND_PRIVACY_LINK_JS = """
   const vendorInfo = /more about (this|the) provider/i;
   const sameSite = (url) => {
     let host;
-    try { host = new URL(url).hostname.toLowerCase().replace(/^www\\./, ''); } catch (e) { return false; }
+    try { host = new URL(url).hostname.toLowerCase().replace(/^\\[|\\]$/g, '').replace(/^www\\./, ''); } catch (e) { return false; }
     return host === siteDomain || host.endsWith('.' + siteDomain);
   };
   for (const a of document.querySelectorAll('a[href]')) {

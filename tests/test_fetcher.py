@@ -1,5 +1,6 @@
 import functools
 import json
+import socket
 import sys
 import threading
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -150,7 +151,7 @@ def privacy_fetches(monkeypatch):
 
     def spy(context, url):
         calls.append(url)
-        return real(context, url) if urlsplit(url).hostname == "localhost" else None
+        return real(context, url) if urlsplit(url).hostname in ("localhost", "::1") else None
 
     monkeypatch.setattr(fetcher, "_fetch_privacy", spy)
     return calls
@@ -172,6 +173,27 @@ def test_same_site_privacy_link_wins_over_banner_links(tmp_path, privacy_fetches
     assert urlsplit(policy["url"]).path.startswith("/privacy")
     assert "data controller" in policy["text"]
     assert all(urlsplit(u).hostname == "localhost" for u in privacy_fetches)
+
+
+def test_same_site_privacy_link_on_ipv6_host(tmp_path, privacy_fetches):
+    class V6Server(ThreadingHTTPServer):
+        address_family = socket.AF_INET6
+
+    try:
+        server = V6Server(("::1", 0), functools.partial(QuietHandler, directory=str(ROOT / "fixtures" / "cookiebot-same-site")))
+    except OSError:
+        pytest.skip("no IPv6 loopback")
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        sites = tmp_path / "sites.txt"
+        sites.write_text(f"http://[::1]:{server.server_address[1]}/\n", encoding="utf-8")
+        [path] = fetcher.run(sites, tmp_path / "raw")
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    finally:
+        server.shutdown()
+        server.server_close()
+    assert privacy_fetches and urlsplit(privacy_fetches[0]).hostname == "::1"
+    assert "data controller" in raw["privacy_policy"]["text"]
 
 
 @pytest.mark.parametrize("host, expected", [
