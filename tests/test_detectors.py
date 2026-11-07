@@ -326,14 +326,6 @@ def services_raw(*hosts, site="bellas.example"):
     }
 
 
-def test_registrable_domain():
-    assert detectors.registrable_domain("www.shop.example.co.uk") == "example.co.uk"
-    assert detectors.registrable_domain("js.hs-scripts.com") == "hs-scripts.com"
-    assert detectors.registrable_domain("www.zexel.io") == "zexel.io"
-    assert detectors.registrable_domain("localhost") == "localhost"
-    assert detectors.registrable_domain("127.0.0.1") == "127.0.0.1"
-
-
 def test_services_one_aggregated_finding():
     raw = services_raw("js.hs-scripts.com", "js.hs-analytics.net", "www.google-analytics.com",
                        "plausible.io", "www.bellas.example", "cdn.bellas.example", "static.unknown-cdn.example")

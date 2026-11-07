@@ -200,6 +200,7 @@ def test_same_site_privacy_link_on_ipv6_host(tmp_path, privacy_fetches):
 
 @pytest.mark.parametrize("host, expected", [
     ("www.zexel.io", "zexel.io"),
+    ("js.hs-scripts.com", "hs-scripts.com"),
     ("ZEXEL.IO", "zexel.io"),
     ("shop.example.ie", "example.ie"),
     ("www.example.co.uk", "example.co.uk"),

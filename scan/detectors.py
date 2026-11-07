@@ -11,6 +11,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from scan import geo
+from scan.domains import registrable as registrable_domain
 from scan.score import compute_score, merge_findings
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
@@ -130,21 +131,6 @@ def line_around(text, start, end, limit=SNIPPET_MAX):
         line_start = max(line_start, start - max(half, 0))
         line_end = min(line_end, line_start + limit)
     return clip(text[line_start:line_end], limit)
-
-
-TWO_PART_SUFFIXES = {"co", "com", "org", "net", "ac", "gov", "edu"}
-
-
-def registrable_domain(host):
-    """Heuristic registrable domain: 'www.shop.example.co.uk' -> 'example.co.uk', 'js.hs-scripts.com' ->
-    'hs-scripts.com'. IP addresses and single-label hosts like 'localhost' come back as they are."""
-    host = (host or "").lower().strip().strip("[]").rstrip(".")
-    if ":" in host or host.replace(".", "").isdigit():
-        return host
-    labels = [x for x in host.split(".") if x]
-    if len(labels) >= 3 and labels[-2] in TWO_PART_SUFFIXES and len(labels[-1]) == 2:
-        return ".".join(labels[-3:])
-    return ".".join(labels[-2:])
 
 
 def country_name(code):

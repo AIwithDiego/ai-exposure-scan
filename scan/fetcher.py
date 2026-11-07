@@ -12,6 +12,8 @@ from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import TimeoutError as PlaywrightTimeout
 from playwright.sync_api import sync_playwright
 
+from scan.domains import registrable as _registrable
+
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
@@ -55,22 +57,6 @@ FIND_PRIVACY_LINK_JS = """
   return null;
 }
 """
-
-GENERIC_SECOND_LEVEL = {"co", "com", "org", "net", "ac", "gov"}
-
-
-def _registrable(host):
-    """Heuristic registrable domain: 'www.shop.example.co.uk' -> 'example.co.uk', 'www.zexel.io' -> 'zexel.io'."""
-    host = (host or "").lower().rstrip(".")
-    if host.startswith("www."):
-        host = host[4:]
-    if host.replace(".", "").isdigit():
-        return host
-    labels = host.split(".")
-    if len(labels) >= 3 and labels[-2] in GENERIC_SECOND_LEVEL:
-        return ".".join(labels[-3:])
-    return ".".join(labels[-2:])
-
 
 COLLECT_SCRIPTS_JS = """
 () => Array.from(document.querySelectorAll('script')).map(s => ({
