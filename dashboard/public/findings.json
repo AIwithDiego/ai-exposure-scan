@@ -1,0 +1,311 @@
+{
+  "_note": "FAKE data in the contract format, so the dashboard can be built before the pipeline works. Domains use the reserved .example TLD.",
+  "generated_at": "2026-11-07T12:05:00Z",
+  "sites": [
+    {
+      "site": "bellas-cafe.example",
+      "final_url": "https://bellas-cafe.example/",
+      "status": 200,
+      "error": null,
+      "score": 52,
+      "findings": [
+        {
+          "id": "bellas-cafe.example:chatbot:intercom",
+          "type": "chatbot",
+          "title": "Intercom chat widget on the homepage",
+          "severity": "info",
+          "method": "detected",
+          "evidence": {
+            "where": "https://bellas-cafe.example/",
+            "snippet": "window.intercomSettings = { app_id: \"demo123\", ..."
+          },
+          "fix": "Your site has an Intercom chat window. That's fine; just make sure it's in your privacy policy.",
+          "meta": {
+            "vendor": "Intercom",
+            "country": "US",
+            "eu": false
+          }
+        },
+        {
+          "id": "bellas-cafe.example:data_transfer:intercom",
+          "type": "data_transfer",
+          "title": "Chat messages likely go to the US (Intercom)",
+          "severity": "low",
+          "method": "detected",
+          "evidence": {
+            "where": "https://bellas-cafe.example/",
+            "snippet": "intercomSettings"
+          },
+          "fix": "Intercom is a US company. Ask your web person whether Intercom's EU data hosting is switched on.",
+          "meta": {
+            "vendor": "Intercom",
+            "country": "US",
+            "eu": false
+          }
+        },
+        {
+          "id": "bellas-cafe.example:key_leak:openai-sk-proj-D",
+          "type": "key_leak",
+          "title": "Secret OpenAI key visible in your site's code",
+          "severity": "high",
+          "method": "detected",
+          "evidence": {
+            "where": "https://bellas-cafe.example/js/menu-assistant.js",
+            "snippet": "const OPENAI_KEY = \"sk-proj-…cafe\";"
+          },
+          "fix": "Anyone can copy this key and spend your OpenAI credit. Ask your web person to delete the key in OpenAI today and move AI calls to the server.",
+          "meta": {
+            "key_type": "OpenAI"
+          }
+        },
+        {
+          "id": "bellas-cafe.example:disclosure:bot-not-ai",
+          "type": "disclosure",
+          "title": "The chat assistant doesn't say it's AI",
+          "severity": "medium",
+          "method": "judged",
+          "evidence": {
+            "where": "https://bellas-cafe.example/",
+            "snippet": "Hi! I'm Bella, how can I help with your order today?"
+          },
+          "fix": "Under the EU AI Act, people should know when they're talking to AI. Ask your web person to add 'I'm an AI assistant' to the greeting.",
+          "meta": {
+            "engine": "keywords"
+          }
+        },
+        {
+          "id": "bellas-cafe.example:disclosure:policy-openai",
+          "type": "disclosure",
+          "title": "Privacy policy doesn't mention OpenAI",
+          "severity": "medium",
+          "method": "judged",
+          "evidence": {
+            "where": "https://bellas-cafe.example/privacy.html",
+            "snippet": "We use Intercom to answer customer messages on our website."
+          },
+          "fix": "Your site sends data to OpenAI but your privacy policy doesn't say so. Add a line naming OpenAI and what it's used for.",
+          "meta": {
+            "engine": "keywords",
+            "vendor": "OpenAI"
+          }
+        },
+        {
+          "id": "bellas-cafe.example:agent_ready:llms-txt",
+          "type": "agent_ready",
+          "title": "Has llms.txt",
+          "severity": "info",
+          "method": "detected",
+          "evidence": {
+            "where": "https://bellas-cafe.example/llms.txt",
+            "snippet": "# Bella's Café"
+          },
+          "fix": "AI assistants can read a short summary of your business. Nice."
+        },
+        {
+          "id": "bellas-cafe.example:agent_ready:robots-ai",
+          "type": "agent_ready",
+          "title": "Blocks 2 AI crawlers (GPTBot, CCBot)",
+          "severity": "info",
+          "method": "detected",
+          "evidence": {
+            "where": "https://bellas-cafe.example/robots.txt",
+            "snippet": "User-agent: GPTBot\nDisallow: /"
+          },
+          "fix": "Your site tells OpenAI's training crawler to stay away. ChatGPT search can still find you. Check this is what you want.",
+          "meta": {
+            "blocked": [
+              "GPTBot",
+              "CCBot"
+            ]
+          }
+        },
+        {
+          "id": "bellas-cafe.example:agent_ready:mcp",
+          "type": "agent_ready",
+          "title": "Names an MCP server",
+          "severity": "info",
+          "method": "detected",
+          "evidence": {
+            "where": "https://bellas-cafe.example/llms.txt",
+            "snippet": "- MCP server for ordering: https://bellas-cafe.example/mcp"
+          },
+          "fix": "Your site says AI agents can order through an MCP server. Make sure it only allows what you intend."
+        }
+      ]
+    },
+    {
+      "site": "smiles-dental.example",
+      "final_url": "https://www.smiles-dental.example/",
+      "status": 200,
+      "error": null,
+      "score": 81,
+      "findings": [
+        {
+          "id": "smiles-dental.example:chatbot:tidio",
+          "type": "chatbot",
+          "title": "Tidio chat widget on the homepage",
+          "severity": "info",
+          "method": "detected",
+          "evidence": {
+            "where": "https://code.tidio.co/abc123.js",
+            "snippet": "<script src=\"//code.tidio.co/abc123.js\" async>"
+          },
+          "fix": "Your site has a Tidio chat window. Make sure it's in your privacy policy.",
+          "meta": {
+            "vendor": "Tidio",
+            "country": "US",
+            "eu": false
+          }
+        },
+        {
+          "id": "smiles-dental.example:data_transfer:tidio",
+          "type": "data_transfer",
+          "title": "Chat messages likely go to the US (Tidio)",
+          "severity": "low",
+          "method": "detected",
+          "evidence": {
+            "where": "https://code.tidio.co/abc123.js",
+            "snippet": "code.tidio.co"
+          },
+          "fix": "Tidio is a US company. Ask your web person where Tidio stores your patients' messages.",
+          "meta": {
+            "vendor": "Tidio",
+            "country": "US",
+            "eu": false
+          }
+        },
+        {
+          "id": "smiles-dental.example:disclosure:bot-unknown",
+          "type": "disclosure",
+          "title": "Couldn't tell if the chat says it's AI",
+          "severity": "low",
+          "method": "judged",
+          "evidence": {
+            "where": "https://www.smiles-dental.example/",
+            "snippet": ""
+          },
+          "fix": "We couldn't see the chat greeting without opening it. Check it says it's an AI assistant if it is one.",
+          "meta": {
+            "engine": "keywords"
+          }
+        },
+        {
+          "id": "smiles-dental.example:disclosure:policy-tidio",
+          "type": "disclosure",
+          "title": "Privacy policy doesn't mention Tidio",
+          "severity": "medium",
+          "method": "judged",
+          "evidence": {
+            "where": "https://www.smiles-dental.example/privacy-policy",
+            "snippet": "We use cookies to improve your experience."
+          },
+          "fix": "Patients' chat messages go to Tidio, but your privacy policy doesn't say so. Add a line naming Tidio.",
+          "meta": {
+            "engine": "model",
+            "vendor": "Tidio"
+          }
+        },
+        {
+          "id": "smiles-dental.example:key_leak:google-AIzaSyB",
+          "type": "key_leak",
+          "title": "Google key in your site's code (probably Maps)",
+          "severity": "low",
+          "method": "detected",
+          "evidence": {
+            "where": "https://www.smiles-dental.example/assets/main.js",
+            "snippet": "key: \"AIzaSyB4…x9Qe\""
+          },
+          "fix": "This looks like a Google Maps key, which is normally public. Ask your web person to make sure it's restricted to your website.",
+          "meta": {
+            "key_type": "Google"
+          }
+        },
+        {
+          "id": "smiles-dental.example:agent_ready:llms-none",
+          "type": "agent_ready",
+          "title": "No llms.txt",
+          "severity": "info",
+          "method": "detected",
+          "evidence": {
+            "where": "https://www.smiles-dental.example/llms.txt",
+            "snippet": "(not found)"
+          },
+          "fix": "Optional: a short llms.txt helps AI assistants describe your practice correctly."
+        },
+        {
+          "id": "smiles-dental.example:agent_ready:robots-ai",
+          "type": "agent_ready",
+          "title": "No rules for AI crawlers",
+          "severity": "info",
+          "method": "detected",
+          "evidence": {
+            "where": "https://www.smiles-dental.example/robots.txt",
+            "snippet": "User-agent: *\nAllow: /"
+          },
+          "fix": "AI crawlers are treated like any other visitor. That's a choice, not a problem."
+        }
+      ]
+    },
+    {
+      "site": "oak-and-ivy.example",
+      "final_url": "https://oak-and-ivy.example/",
+      "status": 200,
+      "error": null,
+      "score": 100,
+      "findings": [
+        {
+          "id": "oak-and-ivy.example:chatbot:crisp",
+          "type": "chatbot",
+          "title": "Crisp chat widget on the homepage",
+          "severity": "info",
+          "method": "detected",
+          "evidence": {
+            "where": "https://client.crisp.chat/l.js",
+            "snippet": "<script src=\"https://client.crisp.chat/l.js\">"
+          },
+          "fix": "Your site has a Crisp chat window. Crisp is based in the EU.",
+          "meta": {
+            "vendor": "Crisp",
+            "country": "FR",
+            "eu": true
+          }
+        },
+        {
+          "id": "oak-and-ivy.example:disclosure:bot-ai",
+          "type": "disclosure",
+          "title": "Chat says it's an AI assistant",
+          "severity": "info",
+          "method": "judged",
+          "evidence": {
+            "where": "https://oak-and-ivy.example/",
+            "snippet": "Hi, I'm Ivy, an AI assistant for Oak & Ivy."
+          },
+          "fix": "Good: visitors know they're talking to AI.",
+          "meta": {
+            "engine": "model"
+          }
+        },
+        {
+          "id": "oak-and-ivy.example:agent_ready:llms-none",
+          "type": "agent_ready",
+          "title": "No llms.txt",
+          "severity": "info",
+          "method": "detected",
+          "evidence": {
+            "where": "https://oak-and-ivy.example/llms.txt",
+            "snippet": "(not found)"
+          },
+          "fix": "Optional: a short llms.txt helps AI assistants describe your shop correctly."
+        }
+      ]
+    },
+    {
+      "site": "closed-bakery.example",
+      "final_url": null,
+      "status": null,
+      "error": "Could not load the site (timeout after 10 s)",
+      "score": null,
+      "findings": []
+    }
+  ]
+}
