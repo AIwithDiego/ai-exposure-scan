@@ -163,9 +163,35 @@ def test_vendor_match_strings_only_hit_their_own_vendor():
     for vendor in detectors.VENDORS:
         for m in vendor["match"]:
             raw = _bare_raw()
-            raw["scripts"].append({"src": None, "inline": True, "content": f"x {m} x"})
+            if detectors._is_host_match(m):
+                url = f"https://{m}" if "/" in m else f"https://{m}/x.js"
+                raw["requests"].append({"url": url, "domain": urlsplit(url).hostname, "method": "GET",
+                                        "resource_type": "script"})
+            else:
+                raw["scripts"].append({"src": None, "inline": True, "content": f"x {m} x"})
             found = [b["meta"]["vendor"] for b in detectors.chatbots(raw)]
             assert found == [detectors.short_name(vendor["name"])], (m, found)
+
+
+def _inline(content):
+    return {"src": None, "inline": True, "content": content}
+
+
+@pytest.mark.parametrize("scripts, requests", [
+    ([_inline('{"@context":"https://schema.org","@type":"Organization",'
+              '"sameAs":["https://www.kindly.ai/customers/acme","https://www.linkedin.com/company/acme"]}')], []),
+    ([_inline('self.__next_f.push([1,"{\\"vendors\\":[\\"sierra.ai\\",\\"https://decagon.ai/blog\\",'
+              '\\"moin.ai\\"]}"])')], []),
+    ([_inline('["https://service.giosg.com","https://fonts.gstatic.com"].forEach(function(h){'
+              'var l=document.createElement("link");l.rel="preconnect";l.href=h;document.head.appendChild(l)})')], []),
+    ([_inline('var qbOptions = {quality: 80, lazy: true};')], []),
+    ([], [{"url": "https://api.chamoin.ai/v1/menu", "domain": "api.chamoin.ai", "method": "GET",
+           "resource_type": "fetch"}]),
+], ids=["json-ld-sameas", "nextjs-page-data", "preconnect-list", "unrelated-qboptions", "lookalike-domain"])
+def test_hostnames_in_text_and_lookalike_domains_are_not_chatbots(scripts, requests):
+    raw = _bare_raw()
+    raw.update(scripts=scripts, requests=requests)
+    assert detectors.chatbots(raw) == []
 
 
 def test_vendor_entries_are_well_formed():

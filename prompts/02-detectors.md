@@ -19,7 +19,7 @@ You are building the Detectors for **AI Exposure Scan** in the repo `<TEAM_REPO>
 If `scan/cli.py` doesn't exist yet, create a minimal one with a `detect` subcommand; if it exists, only add your subcommand.
 
 **Checks to build, one function each, each returns a list of findings:**
-1. `chatbots(raw)`: match every script `src`, request `domain` and inline script `content` against `data/chatbot-vendors.json` (`match` is a list of substrings). One `chatbot` finding per vendor found (severity `info`), with the first matching URL or line as evidence.
+1. `chatbots(raw)`: match every script `src`, request `domain` and inline script `content` against `data/chatbot-vendors.json` (`match` is a list of strings: domain-like ones, optionally with a path prefix, match script srcs and request URLs on a domain boundary; the rest are code signatures, matched as substrings of inline script text only). One `chatbot` finding per vendor found (severity `info`), with the first matching URL or line as evidence.
 2. `data_transfer(raw, vendors_found)`: for each vendor found with `eu: false`, one `data_transfer` finding, severity `low`, title like "Chat messages likely go to the US (Intercom)". Fix text mentions the vendor's EU option if `eu_option` is true in the data file.
 3. `key_leaks(raw)`: run every regex in `data/key-patterns.json` over every script `content` and the `html`. One `key_leak` finding per distinct key, severity from the data file. **Mask before anything else:** first 8 chars + `…` + last 4. The full key must never be stored, logged or printed. Snippet = 60 chars around the match with the key masked. Include `meta.key_type` and the script URL (or "inline script") as `where`.
 4. `agent_ready(raw)`: 

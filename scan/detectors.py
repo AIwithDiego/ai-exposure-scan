@@ -210,27 +210,43 @@ def finding(raw, type_, slug, title, severity, where, snippet, fix, meta=None, m
 
 # ---------- checks ----------
 
-def _host_path(url):
+_HOST_MATCH = re.compile(r"[a-z0-9-]+(\.[a-z0-9-]+)+(/.*)?")
+
+
+def _is_host_match(m):
+    """Domain-like match strings ("cdn.vendor.com", "vendor.com/embed"); the others are code signatures."""
+    return bool(_HOST_MATCH.fullmatch(m))
+
+
+def _url_hit(url, host, matches):
+    """Does the URL's host match a domain-like string on a domain boundary (and its path prefix, if any)?"""
     parts = urlsplit(url)
-    return parts.netloc + parts.path
+    host = (host or parts.hostname or "").lower().strip("[]").rstrip(".")
+    path = parts.path or "/"
+    for m in matches:
+        domain, _, prefix = m.partition("/")
+        if _matches_domain(host, domain) and path.startswith("/" + prefix):
+            return True
+    return False
 
 
 def _vendor_hit(raw, vendor):
-    """First (where, snippet) where any of the vendor's match strings appears, else None."""
-    matches = vendor["match"]
+    """First (where, snippet) for the vendor, else None. Domain-like match strings only match script srcs
+    and request URLs; code signatures (globals, calls) only match inline script text."""
+    hosts = [m for m in vendor["match"] if _is_host_match(m)]
+    code = [m for m in vendor["match"] if not _is_host_match(m)]
     for s in raw.get("scripts") or []:
         src = s.get("src")
-        if src and any(m in _host_path(src) for m in matches):
+        if src and _url_hit(src, None, hosts):
             return src, f'<script src="{src}">'
     for r in raw.get("requests") or []:
         url = r.get("url") or ""
-        domain = r.get("domain") or ""
-        if any(m in domain or m in _host_path(url) for m in matches):
+        if _url_hit(url, r.get("domain"), hosts):
             return url, f"{r.get('method', 'GET')} {url}"
     for s in raw.get("scripts") or []:
         content = s.get("content")
         if s.get("inline") and content:
-            for m in matches:
+            for m in code:
                 i = content.find(m)
                 if i != -1:
                     return page_url(raw), line_around(content, i, i + len(m))
@@ -355,9 +371,9 @@ def _is_vendor_host(host, vendors):
     reg = registrable_domain(host)
     for v in vendors:
         for m in v["match"]:
-            m = m.split("/")[0].lower()
-            if "." not in m or not re.fullmatch(r"[a-z0-9.-]+", m):
+            if not _is_host_match(m):
                 continue
+            m = m.split("/")[0]
             if _matches_domain(host, m) or (reg == registrable_domain(m) and reg not in SHARED_DOMAINS):
                 return True
     return False
