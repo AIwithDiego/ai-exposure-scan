@@ -219,7 +219,11 @@ function howWeKnow(f, site) {
       : "Found in the site's llms.txt file, a short guide written for AI assistants.";
   }
   if (f.type === "data_transfer") {
-    return `We spotted ${f.meta?.vendor || "this vendor"} in the homepage code. Where it's based comes from our list of AI vendors.`;
+    const vendor = f.meta?.vendor || "this vendor";
+    const seen = /^[A-Z]+ https?:\/\//.test(snippet)
+      ? `We saw the homepage contact ${vendor} while loading.`
+      : `We spotted ${vendor} in the homepage code.`;
+    return `${seen} Where it's based comes from our list of AI vendors.`;
   }
   if (f.type === "disclosure") {
     if (slug === "no-policy") return "We looked on the homepage for a link to a privacy policy and found none.";
