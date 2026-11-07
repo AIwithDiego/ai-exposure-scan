@@ -36,7 +36,9 @@ One file per site. `<site>` is the bare domain, e.g. `example.ie`.
   "privacy_policy": {
     "url": "https://www.example.ie/privacy",
     "text": "visible text, capped at 200 KB"
-  }
+  },
+  "server_ip": "104.21.32.1",
+  "server_headers": { "server": "cloudflare", "cf-ray": "8e1234abcd-DUB" }
 }
 ```
 
@@ -44,6 +46,7 @@ Rules:
 - `privacy_policy` is `null` if no link containing "privacy" (or "privacidad", "datenschutz", "confidentialité") is found on the homepage.
 - Only same-site privacy links (same registrable domain as `final_url`) are followed; links inside cookie-consent banners and third-party vendor links are ignored, so `privacy_policy` is `null` when no same-site link exists.
 - `error` is a short string if the page failed to load; the other fields are then best effort, never missing (use `null` or `[]`).
+- `server_ip` (optional) is the IP address of the server that answered the main document, from the same page load (Playwright `response.server_addr()`); `null` if unknown. `server_headers` (optional) is a lowercase-keyed subset of the main response headers: only `server`, `via`, `cf-ray`, `x-vercel-id`, `x-amz-cf-id`, `x-amz-cf-pop`, `x-served-by`, `x-cache`; `{}` if none. Readers must treat both as optional.
 - Wait for network idle or 10 seconds, whichever comes first, then capture. Many chat widgets load late.
 
 ## 2. `out/findings.json` (Detectors + Policy reader write, Dashboard reads)

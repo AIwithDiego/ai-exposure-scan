@@ -4,6 +4,7 @@ import re
 import shutil
 import sys
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import pytest
 
@@ -310,3 +311,181 @@ def test_vendor_match_ignores_query_string():
                requests=[{"url": "https://cdn.example/p?ref=code.tidio.co", "domain": "cdn.example",
                           "method": "GET", "resource_type": "xhr"}])
     assert "Tidio" not in {b["meta"]["vendor"] for b in detectors.chatbots(raw)}
+
+
+# ---------- hosting and outside services ----------
+
+GEO_SAMPLE = Path(__file__).resolve().parent / "geoip-sample.csv"
+
+
+def services_raw(*hosts, site="bellas.example"):
+    return {
+        "site": site, "url": f"https://{site}/", "final_url": f"https://www.{site}/", "error": None,
+        "scripts": [], "requests": [{"url": f"https://{h}/x.js", "domain": h, "method": "GET",
+                                     "resource_type": "script"} for h in hosts],
+    }
+
+
+def test_services_one_aggregated_finding():
+    raw = services_raw("js.hs-scripts.com", "js.hs-analytics.net", "www.google-analytics.com",
+                       "plausible.io", "www.bellas.example", "cdn.bellas.example", "static.unknown-cdn.example")
+    raw["scripts"] = [{"src": "https://www.googletagmanager.com/gtag/js?id=G-1", "inline": False, "content": ""}]
+    found = detectors.services(raw, [])
+    assert len(found) == 1
+    [f] = found
+    assert f["id"] == "bellas.example:data_transfer:services"
+    assert f["type"] == "data_transfer" and f["method"] == "detected"
+    names = [s["name"] for s in f["meta"]["services"]]
+    assert names == ["HubSpot", "Google Analytics", "Plausible", "Google Tag Manager"]
+    assert f["meta"]["kind"] == "services"
+    assert f["meta"]["outside_eu_count"] == 3
+    assert f["meta"]["unknown_domains"] == ["unknown-cdn.example"]
+    assert f["severity"] == "low"
+    assert f["title"] == "Your site sends visitor data to 4 outside services, 3 likely outside the EU"
+    assert "bellas.example" not in f["evidence"]["snippet"].replace("unknown-cdn.example", "")
+    assert len(f["evidence"]["snippet"]) <= detectors.SNIPPET_MAX
+
+
+def test_services_eu_only_is_info():
+    [f] = detectors.services(services_raw("plausible.io"), [])
+    assert f["severity"] == "info" and f["meta"]["outside_eu_count"] == 0
+
+
+def test_services_skip_scripts_never_fetched():
+    raw = services_raw("plausible.io")
+    raw["scripts"] = [{"src": "https://www.googletagmanager.com/gtag/js?id=G-1", "inline": False, "content": None}]
+    [f] = detectors.services(raw, [])
+    assert [s["name"] for s in f["meta"]["services"]] == ["Plausible"]
+
+
+def test_social_embeds_are_not_ad_pixels():
+    [f] = detectors.services(services_raw("www.facebook.com", "connect.facebook.net", "platform.linkedin.com",
+                                          "snap.licdn.com", "www.tiktok.com"), [])
+    assert [(s["name"], s["category"]) for s in f["meta"]["services"]] == [
+        ("Facebook", "social"), ("Meta Pixel", "ads"), ("LinkedIn", "social"),
+        ("LinkedIn Insight", "ads"), ("TikTok", "social")]
+
+
+def test_pixel_beacons_on_social_domains_are_not_social_services():
+    raw = services_raw("connect.facebook.net", "snap.licdn.com")
+    raw["requests"] += [{"url": u, "domain": urlsplit(u).hostname, "method": "GET", "resource_type": "image"}
+                        for u in ("https://www.facebook.com/tr?id=1&ev=PageView",
+                                  "https://www.linkedin.com/li/track?pid=1")]
+    [f] = detectors.services(raw, [])
+    assert [s["name"] for s in f["meta"]["services"]] == ["Meta Pixel", "LinkedIn Insight"]
+    assert f["meta"]["outside_eu_count"] == 2
+
+
+def test_path_match_stops_at_segment_boundary():
+    raw = services_raw()
+    raw["requests"] = [{"url": u, "domain": urlsplit(u).hostname, "method": "GET", "resource_type": "document"}
+                       for u in ("https://www.facebook.com/travel", "https://www.linkedin.com/li/trackers")]
+    [f] = detectors.services(raw, [])
+    assert [s["name"] for s in f["meta"]["services"]] == ["Facebook", "LinkedIn"]
+
+
+def test_wordpress_and_lemlist_are_services():
+    [f] = detectors.services(services_raw("i0.wp.com", "stats.wp.com", "app.lemlist.com"), [])
+    assert [(s["name"], s["category"], s["eu"]) for s in f["meta"]["services"]] == [
+        ("WordPress.com / Jetpack", "cdn", False), ("lemlist", "crm", True)]
+    assert f["meta"]["unknown_domains"] == []
+
+
+def test_own_domain_requests_ignored():
+    [f] = detectors.services(services_raw("www.bellas.example", "img.bellas.example"), [])
+    assert f["severity"] == "info" and f["meta"]["services"] == [] and f["meta"]["unknown_domains"] == []
+    assert f["title"] == "Your homepage doesn't contact any outside services"
+
+
+def test_services_skip_reported_chat_vendors():
+    raw = services_raw("widget.intercom.io", "nexus-websocket-a.intercom.io", "js.hs-scripts.com")
+    bots = detectors.chatbots(raw)
+    assert [b["meta"]["vendor"] for b in bots] == ["Intercom"]
+    [f] = detectors.services(raw, bots)
+    assert [s["name"] for s in f["meta"]["services"]] == ["HubSpot"]
+    assert f["meta"]["unknown_domains"] == []
+
+
+def test_detect_wires_services_once():
+    raw = {**load_raw(), "requests": load_raw()["requests"] + services_raw("fonts.googleapis.com")["requests"]}
+    found = [f for f in detectors.detect(raw) if f["id"].endswith(":data_transfer:services")]
+    assert len(found) == 1
+
+
+def hosting_raw(ip, headers=None):
+    return {"site": "bellas.example", "url": "https://bellas.example/", "final_url": "https://bellas.example/",
+            "error": None, "server_ip": ip, "server_headers": headers or {}}
+
+
+def test_hosting_public_ip(monkeypatch):
+    monkeypatch.setenv("GEOIP_CSV", str(GEO_SAMPLE))
+    [f] = detectors.hosting(hosting_raw("85.214.132.117", {"server": "Apache"}))
+    assert f["id"] == "bellas.example:data_transfer:hosting"
+    assert f["meta"] == {"kind": "hosting", "ip_country": "DE", "cdn": None, "edge_city": None, "edge_country": None}
+    assert f["severity"] == "info" and f["method"] == "detected"
+    assert f["title"] == "Your site is hosted in Germany"
+    [us] = detectors.hosting(hosting_raw("8.8.8.8"))
+    assert us["severity"] == "low" and us["meta"]["ip_country"] == "US"
+
+
+def test_hosting_private_or_missing_ip_gives_nothing(monkeypatch):
+    monkeypatch.setenv("GEOIP_CSV", str(GEO_SAMPLE))
+    assert detectors.hosting(hosting_raw("127.0.0.1")) == []
+    assert detectors.hosting(hosting_raw("192.168.0.4")) == []
+    assert detectors.hosting(hosting_raw(None)) == []
+    assert detectors.hosting({"site": "x", "url": "https://x/", "error": None}) == []
+
+
+def test_hosting_cdn_from_cf_ray_is_judged(monkeypatch):
+    monkeypatch.setenv("GEOIP_CSV", str(GEO_SAMPLE))
+    [f] = detectors.hosting(hosting_raw("104.21.32.1", {"cf-ray": "8e1234abcd-DUB"}))
+    assert f["method"] == "judged" and f["severity"] == "info"
+    assert f["meta"] == {"kind": "hosting", "ip_country": "US", "cdn": "Cloudflare",
+                         "edge_city": "Dublin", "edge_country": "IE"}
+    assert f["title"] == "Your site is served through Cloudflare from Dublin (EU)"
+    assert "differ" in f["fix"]
+
+
+def test_hosting_vercel_edge_from_x_vercel_id(monkeypatch):
+    monkeypatch.setenv("GEOIP_CSV", str(GEO_SAMPLE))
+    [f] = detectors.hosting(hosting_raw("104.21.32.1", {"x-vercel-id": "dub1::iad1::abc12-1730990000000-0f"}))
+    assert f["title"] == "Your site is served through Vercel from Dublin (EU)"
+    assert f["severity"] == "info" and f["method"] == "judged"
+    assert (f["meta"]["edge_city"], f["meta"]["edge_country"]) == ("Dublin", "IE")
+
+
+def test_hosting_cdn_edge_outside_eu_is_still_info(monkeypatch):
+    monkeypatch.setenv("GEOIP_CSV", str(GEO_SAMPLE))
+    [f] = detectors.hosting(hosting_raw("8.8.8.8", {"x-amz-cf-id": "abc", "x-amz-cf-pop": "IAD89-P2"}))
+    assert f["title"] == "Your site is served through CloudFront from Washington, D.C. (US)"
+    assert f["severity"] == "info"
+    [uk] = detectors.hosting(hosting_raw("8.8.8.8", {"x-served-by": "cache-lhr7321-LHR"}))
+    assert uk["title"] == "Your site is served through Fastly from London (UK)"
+
+
+def test_hosting_cdn_edge_unreadable(monkeypatch):
+    monkeypatch.setenv("GEOIP_CSV", str(GEO_SAMPLE))
+    [f] = detectors.hosting(hosting_raw("8.8.8.8", {"x-vercel-id": "something-else"}))
+    assert f["title"] == "Your site is served through Vercel's global network"
+    assert f["severity"] == "info" and f["method"] == "judged"
+    assert f["meta"]["edge_city"] is None and f["meta"]["edge_country"] is None
+    [cf] = detectors.hosting(hosting_raw("8.8.8.8", {"server": "cloudflare", "cf-ray": "8e1234abcd-QQQ"}))
+    assert cf["title"] == "Your site is served through Cloudflare's global network"
+
+
+def test_cdn_from_headers():
+    assert detectors._cdn({"server": "cloudflare"}) == "Cloudflare"
+    assert detectors._cdn({"x-vercel-id": "dub1::abc"}) == "Vercel"
+    assert detectors._cdn({"x-amz-cf-id": "abc"}) == "CloudFront"
+    assert detectors._cdn({"x-served-by": "cache-dub4320-DUB"}) == "Fastly"
+    assert detectors._cdn({"server": "nginx"}) is None
+
+
+def test_rerun_drops_stale_judged_hosting(out_dir):
+    first = run_detect(out_dir)
+    stale = {"id": "localhost:8765:data_transfer:hosting", "type": "data_transfer", "title": "old", "severity": "low",
+             "method": "judged", "evidence": {"where": "x", "snippet": "x"}, "fix": "x"}
+    first["sites"][0]["findings"].append(stale)
+    (out_dir / "findings.json").write_text(json.dumps(first), encoding="utf-8")
+    again = run_detect(out_dir)
+    assert stale["id"] not in [f["id"] for f in again["sites"][0]["findings"]]

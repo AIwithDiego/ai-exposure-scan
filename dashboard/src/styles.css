@@ -139,6 +139,12 @@ a { color: var(--link); word-break: break-all; text-underline-offset: 3px; }
 .tag::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--orb); box-shadow: 0 0 8px var(--orb); }
 .tag-outside { --orb: var(--medium); }
 .tag-eu { --orb: var(--good); }
+.destinations-group { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--hairline); }
+.destinations-group h3 { font-size: 1rem; color: var(--text-2); margin-bottom: 4px; }
+.destinations-group p { margin: 0; }
+.destinations-quiet { gap: 14px; }
+.destinations-quiet .destination-name { font-weight: 400; color: var(--text-2); }
+.destinations-quiet .bar, .destinations-quiet .tag { opacity: 0.7; }
 
 /* Sites table */
 .sites { width: 100%; border-collapse: collapse; margin-top: 8px; }
@@ -200,6 +206,10 @@ a { color: var(--link); word-break: break-all; text-underline-offset: 3px; }
 .site-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; border-color: var(--champagne-edge); --bloom: radial-gradient(220px 180px at calc(100% - 88px) 50%, rgba(227, 205, 156, 0.16), transparent 70%); }
 .site-head h2 { font-size: 1.5rem; margin-bottom: 4px; }
 .site-head a { font-family: var(--font-mono); font-size: 0.875rem; }
+.site-hosting { --orb: var(--edge); display: flex; align-items: center; gap: 8px; margin: 0 0 6px; font-size: 0.9375rem; color: var(--text-2); }
+.site-hosting::before { content: ""; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--orb); box-shadow: 0 0 8px var(--orb); }
+.hosting-eu { --orb: var(--good); }
+.hosting-outside { --orb: var(--medium); }
 .site-head:has(.score-none) { border-color: var(--edge); --bloom: linear-gradient(transparent, transparent); }
 
 /* Banner: neutral slate, never red */
@@ -240,6 +250,15 @@ a { color: var(--link); word-break: break-all; text-underline-offset: 3px; }
 .method-judged { cursor: help; }
 .method-judged::before { border: 1.5px dashed var(--text-2); }
 
+.services { margin-bottom: 14px; }
+.services-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--hairline); border-radius: var(--r-box); }
+.services-list li { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1.2fr) 10.5rem; align-items: center; gap: 12px; padding: 8px 12px; border-bottom: 1px solid var(--hairline); }
+.services-list li:last-child { border-bottom: none; }
+.service-name { font-weight: 600; }
+.service-category { font-size: 0.875rem; }
+.service-country { font-size: 0.875rem; }
+.services-list .tag { justify-self: end; }
+.services-unknown { margin: 8px 0 0; word-break: break-word; }
 .evidence { margin-bottom: 14px; }
 .evidence-label { font-size: 0.8125rem; font-weight: 600; color: var(--text-3); margin-bottom: 4px; }
 .evidence a, .evidence > span { font-family: var(--font-mono); font-size: 0.875rem; }
@@ -254,6 +273,9 @@ a { color: var(--link); word-break: break-all; text-underline-offset: 3px; }
 .fix-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .fix-head strong { font-weight: 600; }
 .fix p { margin: 6px 0 0; }
+
+.footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--hairline); }
+.footer a { word-break: normal; }
 
 @media (max-width: 800px) {
   .cards { grid-template-columns: repeat(2, 1fr); }
@@ -274,6 +296,9 @@ a { color: var(--link); word-break: break-all; text-underline-offset: 3px; }
   .sites tbody tr:hover { border-color: var(--champagne-edge); }
   .sites td.worst { text-align: right; }
   .finding { padding: 16px; }
+  .services-list li { grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; }
+  .services-list .service-category, .services-list .service-country { grid-column: 1; }
+  .services-list .tag { grid-row: 1; grid-column: 2; }
   .finding-head { flex-direction: column; }
   .site-head { --bloom: radial-gradient(200px 160px at 80px calc(100% - 80px), rgba(227, 205, 156, 0.16), transparent 70%); }
 }
@@ -289,6 +314,7 @@ a { color: var(--link); word-break: break-all; text-underline-offset: 3px; }
   .total::before, .total::after, .tag::before, .method-detected::before { forced-color-adjust: none; background: CanvasText; box-shadow: none; }
   .method-judged::before { border-color: CanvasText; }
   .finding-head h4::before { border-color: CanvasText; filter: none; }
+  .site-hosting::before { forced-color-adjust: none; background: CanvasText; box-shadow: none; }
   .bar, .bar-fill { forced-color-adjust: none; }
   .bar { background: GrayText; }
   .bar-fill { background: Highlight; }

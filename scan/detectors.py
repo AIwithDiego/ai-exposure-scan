@@ -1,6 +1,7 @@
 """Detectors: plain-code checks over out/raw/*.json. No model, no network.
 
-Every finding uses method "detected". Keys are masked in every string a finding carries.
+Findings use method "detected", except hosting behind a CDN ("judged": the CDN's address may not be the real
+server). Keys are masked in every string a finding carries.
 """
 import hashlib
 import json
@@ -9,6 +10,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlsplit
 
+from scan import geo
+from scan.domains import registrable as registrable_domain
 from scan.score import compute_score, merge_findings
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
@@ -18,7 +21,71 @@ KEY_CONTEXT = 30  # chars each side of a key -> ~60 chars around the match
 COUNTRY_NAMES = {
     "US": "the US", "CA": "Canada", "GB": "the UK", "FR": "France", "DE": "Germany",
     "PL": "Poland", "ES": "Spain", "IE": "Ireland", "NL": "the Netherlands",
+    "AT": "Austria", "BE": "Belgium", "BG": "Bulgaria", "HR": "Croatia", "CY": "Cyprus",
+    "CZ": "Czechia", "DK": "Denmark", "EE": "Estonia", "FI": "Finland", "GR": "Greece",
+    "HU": "Hungary", "IT": "Italy", "LV": "Latvia", "LT": "Lithuania", "LU": "Luxembourg",
+    "MT": "Malta", "PT": "Portugal", "RO": "Romania", "SK": "Slovakia", "SI": "Slovenia",
+    "SE": "Sweden", "CH": "Switzerland", "NO": "Norway", "IS": "Iceland", "AU": "Australia",
+    "NZ": "New Zealand", "SG": "Singapore", "JP": "Japan", "IN": "India", "CN": "China",
+    "HK": "Hong Kong", "IL": "Israel", "BR": "Brazil", "ZA": "South Africa", "KR": "South Korea",
 }
+EU_COUNTRIES = {
+    "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE", "GR", "HU", "IE",
+    "IT", "LV", "LT", "LU", "MT", "NL", "PL", "PT", "RO", "SK", "SI", "ES", "SE",
+}
+CDNS = [  # (name, header, substring in its value or None for "header present")
+    ("Cloudflare", "cf-ray", None),
+    ("Cloudflare", "server", "cloudflare"),
+    ("Vercel", "x-vercel-id", None),
+    ("CloudFront", "x-amz-cf-id", None),
+    ("Fastly", "x-served-by", None),
+]
+
+
+# Edge locations a CDN names in its headers: IATA airport code (Cloudflare cf-ray suffix, CloudFront
+# x-amz-cf-pop, Fastly x-served-by) or Vercel region (x-vercel-id prefix, same letters) -> (city, country).
+EDGE_LOCATIONS = {
+    "DUB": ("Dublin", "IE"), "ORK": ("Cork", "IE"), "AMS": ("Amsterdam", "NL"), "FRA": ("Frankfurt", "DE"),
+    "MUC": ("Munich", "DE"), "DUS": ("Düsseldorf", "DE"), "HAM": ("Hamburg", "DE"), "BER": ("Berlin", "DE"),
+    "TXL": ("Berlin", "DE"), "CDG": ("Paris", "FR"), "MRS": ("Marseille", "FR"), "MAD": ("Madrid", "ES"),
+    "BCN": ("Barcelona", "ES"), "LIS": ("Lisbon", "PT"), "MXP": ("Milan", "IT"), "MIL": ("Milan", "IT"),
+    "FCO": ("Rome", "IT"), "VIE": ("Vienna", "AT"), "BRU": ("Brussels", "BE"), "CPH": ("Copenhagen", "DK"),
+    "ARN": ("Stockholm", "SE"), "HEL": ("Helsinki", "FI"), "WAW": ("Warsaw", "PL"), "PRG": ("Prague", "CZ"),
+    "BUD": ("Budapest", "HU"), "OTP": ("Bucharest", "RO"), "SOF": ("Sofia", "BG"), "ATH": ("Athens", "GR"),
+    "ZAG": ("Zagreb", "HR"), "LJU": ("Ljubljana", "SI"), "LUX": ("Luxembourg", "LU"), "RIX": ("Riga", "LV"),
+    "TLL": ("Tallinn", "EE"), "VNO": ("Vilnius", "LT"), "LHR": ("London", "GB"), "LON": ("London", "GB"),
+    "MAN": ("Manchester", "GB"), "EDI": ("Edinburgh", "GB"), "ZRH": ("Zurich", "CH"), "GVA": ("Geneva", "CH"),
+    "OSL": ("Oslo", "NO"), "IAD": ("Washington, D.C.", "US"), "EWR": ("Newark", "US"), "JFK": ("New York", "US"),
+    "LGA": ("New York", "US"), "BOS": ("Boston", "US"), "ATL": ("Atlanta", "US"), "MIA": ("Miami", "US"),
+    "ORD": ("Chicago", "US"), "CHI": ("Chicago", "US"), "DFW": ("Dallas", "US"), "DEN": ("Denver", "US"),
+    "PHX": ("Phoenix", "US"), "LAX": ("Los Angeles", "US"), "SFO": ("San Francisco", "US"),
+    "SJC": ("San Jose", "US"), "SEA": ("Seattle", "US"), "PDX": ("Portland", "US"), "CLE": ("Cleveland", "US"),
+    "YUL": ("Montreal", "CA"), "YYZ": ("Toronto", "CA"), "GRU": ("São Paulo", "BR"), "SIN": ("Singapore", "SG"),
+    "HKG": ("Hong Kong", "HK"), "NRT": ("Tokyo", "JP"), "HND": ("Tokyo", "JP"), "KIX": ("Osaka", "JP"),
+    "ICN": ("Seoul", "KR"), "BOM": ("Mumbai", "IN"), "SYD": ("Sydney", "AU"), "CPT": ("Cape Town", "ZA"),
+    "DXB": ("Dubai", "AE"),
+}
+
+
+def _edge_code(cdn, headers):
+    """Three-letter edge code from the CDN's own headers, or None."""
+    if cdn == "Vercel":
+        m = re.match(r"([a-z]{3})\d+::", headers.get("x-vercel-id", "").lower())
+    elif cdn == "Cloudflare":
+        m = re.search(r"-([A-Za-z]{3})$", headers.get("cf-ray", "").strip())
+    elif cdn == "CloudFront":
+        m = re.match(r"([A-Za-z]{3})", headers.get("x-amz-cf-pop", "").strip())
+    elif cdn == "Fastly":
+        m = re.search(r"-([A-Za-z]{3})$", headers.get("x-served-by", "").split(",")[-1].strip())
+    else:
+        m = None
+    return m.group(1).upper() if m else None
+
+
+def _edge(cdn, headers):
+    """(city, country code) of the CDN edge that answered, read from its headers; (None, None) if unknown."""
+    headers = {k.lower(): str(v) for k, v in (headers or {}).items()}
+    return EDGE_LOCATIONS.get(_edge_code(cdn, headers), (None, None))
 
 
 def _load(name):
@@ -30,6 +97,7 @@ KEY_PATTERNS = [
     {**p, "compiled": re.compile(p["regex"])} for p in _load("key-patterns.json")["patterns"]
 ]
 CRAWLERS = _load("ai-crawlers.json")["crawlers"]
+SERVICES = _load("services.json")["services"]
 
 
 # ---------- helpers ----------
@@ -111,6 +179,10 @@ def line_around(text, start, end, limit=SNIPPET_MAX):
     return clip(text[line_start:line_end], limit)
 
 
+def country_name(code):
+    return COUNTRY_NAMES.get(code, code)
+
+
 def page_url(raw):
     return raw.get("final_url") or raw.get("url") or raw["site"]
 
@@ -120,13 +192,13 @@ def origin(raw):
     return m.group(1) if m else page_url(raw).rstrip("/")
 
 
-def finding(raw, type_, slug, title, severity, where, snippet, fix, meta=None):
+def finding(raw, type_, slug, title, severity, where, snippet, fix, meta=None, method="detected"):
     f = {
         "id": f"{raw['site']}:{type_}:{slug}",
         "type": type_,
         "title": title,
         "severity": severity,
-        "method": "detected",
+        "method": method,
         "evidence": {"where": mask_all_keys(where), "snippet": clip(mask_all_keys(snippet or ""))},
         "fix": fix,
     }
@@ -211,6 +283,150 @@ def data_transfer(raw, vendors_found):
         findings.append(finding(raw, "data_transfer", slugify(name), title, "low",
                                 cf["evidence"]["where"], cf["evidence"]["snippet"], fix, meta))
     return findings
+
+
+def _cdn(headers):
+    headers = {k.lower(): str(v) for k, v in (headers or {}).items()}
+    for name, header, needle in CDNS:
+        value = headers.get(header)
+        if value is not None and (needle is None or needle in value.lower()):
+            return name
+    return None
+
+
+def hosting(raw):
+    """Where the main page was served from: server IP -> country (DB-IP), CDN from response headers.
+    No finding when the IP is unknown, private or not in the database."""
+    ip = raw.get("server_ip")
+    code = geo.country_of(ip) if ip else None
+    if not code:
+        return []
+    cdn = _cdn(raw.get("server_headers"))
+    country = country_name(code)
+    in_eu = code in EU_COUNTRIES
+    edge_city, edge_country = _edge(cdn, raw.get("server_headers")) if cdn else (None, None)
+    if cdn:
+        # The IP belongs to the CDN's network, so its country says nothing about where the site lives.
+        if edge_city:
+            where = "EU" if edge_country in EU_COUNTRIES else {"GB": "UK"}.get(edge_country, edge_country)
+            title = f"Your site is served through {cdn} from {edge_city} ({where})"
+        else:
+            title = f"Your site is served through {cdn}'s global network"
+        fix = (f"Your site is delivered through {cdn}, a network that answers visitors from a city near them, "
+               "so the server we reached can differ from where your site really lives. "
+               "Ask your web person where your main server is and that your privacy policy names your host.")
+    elif in_eu:
+        title = f"Your site is hosted in {country}"
+        fix = f"Your website's server is in {country}, inside the EU. Nothing to do."
+    else:
+        title = f"Your site is hosted in {country}"
+        fix = (f"Your website's server appears to be in {country}, outside the EU, so visitor data likely "
+               "leaves the EU. Ask your web person whether your host offers EU hosting, and to name it in "
+               "your privacy policy.")
+    headers = raw.get("server_headers") or {}
+    snippet = " · ".join([f"server address {ip} ({code})"] + [f"{k}: {v}" for k, v in headers.items()])
+    meta = {"kind": "hosting", "ip_country": code, "cdn": cdn, "edge_city": edge_city, "edge_country": edge_country}
+    return [finding(raw, "data_transfer", "hosting", title, "info" if in_eu or cdn else "low", page_url(raw),
+                    snippet, fix, meta, method="judged" if cdn else "detected")]
+
+
+def _matches_domain(host, domain):
+    return host == domain or host.endswith("." + domain)
+
+
+def _service_match(host, path, m):
+    domain, _, prefix = m.partition("/")
+    prefix = "/" + prefix.rstrip("/")
+    return _matches_domain(host, domain) and (prefix == "/" or path == prefix or path.startswith(prefix + "/"))
+
+
+def _service_for(host, path=""):
+    """First services.json entry matching host (and path, for "domain/path" match strings)."""
+    return next((s for s in SERVICES if any(_service_match(host, path, m) for m in s["match"])), None)
+
+
+SHARED_DOMAINS = {"googleapis.com", "gstatic.com", "amazonaws.com", "cloudfront.net"}
+
+
+def _is_vendor_host(host, vendors):
+    """True if host belongs to one of the given chatbot vendors: a domain-like match string matches it,
+    or it shares a (not shared-infrastructure) registrable domain with one."""
+    reg = registrable_domain(host)
+    for v in vendors:
+        for m in v["match"]:
+            m = m.split("/")[0].lower()
+            if "." not in m or not re.fullmatch(r"[a-z0-9.-]+", m):
+                continue
+            if _matches_domain(host, m) or (reg == registrable_domain(m) and reg not in SHARED_DOMAINS):
+                return True
+    return False
+
+
+def _contacted(raw):
+    """(host, path) pairs the page contacted (requests and script src URLs), in first-seen order.
+    A script tag that was never fetched (e.g. held back by a consent banner) doesn't count."""
+    pairs = []
+    requested = set()
+    for r in raw.get("requests") or []:
+        parts = urlsplit(r.get("url") or "")
+        pairs.append((r.get("domain") or parts.hostname or "", parts.path))
+        requested.add(r.get("url"))
+    for s in raw.get("scripts") or []:
+        if s.get("src") and (s.get("content") is not None or s["src"] in requested):
+            parts = urlsplit(s["src"])
+            pairs.append((parts.hostname or "", parts.path))
+    seen = []
+    for h, path in pairs:
+        pair = (h.lower().strip("[]").rstrip("."), path or "/")
+        if pair[0] and pair not in seen:
+            seen.append(pair)
+    return seen
+
+
+def services(raw, vendors_found):
+    """One aggregated finding for the other outside services the page contacts (data/services.json).
+    Skips the site's own domain and the chat / AI vendors already reported. vendors_found: chatbot findings."""
+    own = registrable_domain(urlsplit(page_url(raw)).hostname or raw["site"].split(":")[0])
+    found_names = {cf["meta"]["vendor"] for cf in vendors_found}
+    found_vendors = [v for v in VENDORS if short_name(v["name"]) in found_names]
+    found, domains, unknown = {}, [], []
+    for host, path in _contacted(raw):
+        if registrable_domain(host) == own or _is_vendor_host(host, found_vendors):
+            continue
+        svc = _service_for(host, path)
+        if svc:
+            found.setdefault(svc["name"], svc)
+            if host not in domains:
+                domains.append(host)
+        elif not _is_vendor_host(host, VENDORS):
+            reg = registrable_domain(host)
+            if reg not in unknown:
+                unknown.append(reg)
+    if not found and not unknown:
+        title = "No other outside services on your homepage" if vendors_found else \
+            "Your homepage doesn't contact any outside services"
+        fix = ("Nothing to do. If you add analytics, fonts, videos or maps later, "
+               "name them in your privacy policy and your cookie banner.")
+        meta = {"kind": "services", "services": [], "outside_eu_count": 0, "unknown_domains": []}
+        return [finding(raw, "data_transfer", "services", title, "info", page_url(raw),
+                        f"Only {own} was contacted while the homepage loaded", fix, meta)]
+    listed = [{"name": s["name"], "country": s["country"], "eu": s["eu"], "category": s["category"]}
+              for s in found.values()]
+    outside = sum(1 for s in listed if not s["eu"])
+    n = len(listed)
+    if n:
+        noun = "service" if n == 1 else "services"
+        tail = f"{outside} likely outside the EU" if outside else "all likely inside the EU"
+        title = f"Your site sends visitor data to {n} outside {noun}, {tail}"
+    else:
+        title = f"Your site contacts {len(unknown)} other {'website' if len(unknown) == 1 else 'websites'} while loading"
+    fix = ("Each visitor's browser contacts these companies when your homepage loads. "
+           "Check these are all in your privacy policy and your cookie banner asks before loading them.")
+    shown = (domains + unknown)[:6]
+    snippet = ", ".join(shown) + (" …" if len(domains) + len(unknown) > len(shown) else "")
+    meta = {"kind": "services", "services": listed, "outside_eu_count": outside, "unknown_domains": unknown[:10]}
+    return [finding(raw, "data_transfer", "services", title, "low" if outside else "info", page_url(raw),
+                    snippet, fix, meta)]
 
 
 def _key_sources(raw):
@@ -383,7 +599,7 @@ def detect(raw):
     if raw.get("error"):
         return []
     bots = chatbots(raw)
-    return bots + data_transfer(raw, bots) + key_leaks(raw) + agent_ready(raw)
+    return bots + data_transfer(raw, bots) + hosting(raw) + services(raw, bots) + key_leaks(raw) + agent_ready(raw)
 
 
 def site_entry(raw, findings):
@@ -414,7 +630,8 @@ def run(raw_dir, findings_path):
     sites = []
     for path in sorted(raw_dir.glob("*.json")):
         raw = json.loads(path.read_text(encoding="utf-8"))
-        kept = [] if raw.get("error") else [f for f in existing.get(raw["site"], []) if f.get("method") != "detected"]
+        kept = [] if raw.get("error") else [f for f in existing.get(raw["site"], [])
+                                            if f.get("method") != "detected" and f.get("type") != "data_transfer"]
         findings = merge_findings(kept, detect(raw))
         entry = site_entry(raw, findings)
         sites.append(entry)

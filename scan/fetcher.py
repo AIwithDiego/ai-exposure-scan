@@ -12,6 +12,8 @@ from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import TimeoutError as PlaywrightTimeout
 from playwright.sync_api import sync_playwright
 
+from scan.domains import registrable as _registrable
+
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
@@ -24,6 +26,8 @@ SMALL_FETCH_TIMEOUT_MS = 10_000
 HTML_CAP = 2 * 1024 * 1024
 SCRIPT_CAP = 2 * 1024 * 1024
 TEXT_CAP = 200 * 1024
+
+SERVER_HEADERS = ["server", "via", "cf-ray", "x-vercel-id", "x-amz-cf-id", "x-amz-cf-pop", "x-served-by", "x-cache"]
 
 PRIVACY_WORDS = ["privacy", "privacidad", "datenschutz", "confidentialit"]
 
@@ -53,22 +57,6 @@ FIND_PRIVACY_LINK_JS = """
   return null;
 }
 """
-
-GENERIC_SECOND_LEVEL = {"co", "com", "org", "net", "ac", "gov"}
-
-
-def _registrable(host):
-    """Heuristic registrable domain: 'www.shop.example.co.uk' -> 'example.co.uk', 'www.zexel.io' -> 'zexel.io'."""
-    host = (host or "").lower().rstrip(".")
-    if host.startswith("www."):
-        host = host[4:]
-    if host.replace(".", "").isdigit():
-        return host
-    labels = host.split(".")
-    if len(labels) >= 3 and labels[-2] in GENERIC_SECOND_LEVEL:
-        return ".".join(labels[-3:])
-    return ".".join(labels[-2:])
-
 
 COLLECT_SCRIPTS_JS = """
 () => Array.from(document.querySelectorAll('script')).map(s => ({
@@ -141,6 +129,8 @@ def empty_raw(url, label=None):
         "robots_txt": None,
         "llms_txt": None,
         "privacy_policy": None,
+        "server_ip": None,
+        "server_headers": {},
     }
     if label:
         raw["label"] = label
@@ -205,9 +195,13 @@ def fetch_site(browser, url, label=None):
                 "resource_type": req.resource_type,
             })
 
+        main_responses = []
+
         def on_response(resp):
             if resp.request.resource_type == "script":
                 script_responses.append(resp)
+            if resp.request.is_navigation_request() and resp.frame == page.main_frame:
+                main_responses.append(resp)
 
         page.on("request", on_request)
         page.on("response", on_response)
@@ -216,11 +210,17 @@ def fetch_site(browser, url, label=None):
             response = page.goto(url, wait_until="domcontentloaded", timeout=GOTO_TIMEOUT_MS)
             raw["status"] = response.status if response else None
         except PlaywrightError as exc:
+            response = None
             raw["error"] = _short_error(exc)
         try:
             page.wait_for_load_state("networkidle", timeout=IDLE_TIMEOUT_MS)
         except PlaywrightError:
             pass
+        if response:
+            # A script redirect after DOMContentLoaded means the page we capture came from a later server.
+            main = main_responses[-1] if main_responses else response
+            raw["server_ip"] = _server_ip(main)
+            raw["server_headers"] = _server_headers(main)
 
         page.remove_listener("request", on_request)
         page.remove_listener("response", on_response)
@@ -258,6 +258,31 @@ def fetch_site(browser, url, label=None):
     finally:
         context.close()
     return raw
+
+
+def _server_ip(response):
+    """IP of the server that answered the main document, from the load already made. None if unknown."""
+    try:
+        addr = response.server_addr() if response else None
+    except Exception:
+        return None
+    ip = (addr or {}).get("ipAddress")
+    return ip.strip("[]") if ip else None
+
+
+def _server_headers(response):
+    """Lowercase-keyed subset of the main response headers that hint at the host or CDN."""
+    if not response:
+        return {}
+    try:
+        headers = response.all_headers()
+    except Exception:
+        try:
+            headers = response.headers
+        except Exception:
+            return {}
+    lower = {k.lower(): v for k, v in (headers or {}).items()}
+    return {k: lower[k] for k in SERVER_HEADERS if k in lower}
 
 
 def _collect_scripts(page, script_responses):
