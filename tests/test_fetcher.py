@@ -101,10 +101,14 @@ def test_failed_site_still_writes_file(tmp_path):
     assert data["scripts"] == [] and data["privacy_policy"] is None and data["llms_txt"] is None
 
 
-def test_same_page_privacy_anchor_is_ignored(tmp_path):
+@pytest.mark.parametrize("link, expected", [
+    ('<a href="#privacy">Privacy</a>', None),
+    ('<a href="/#/privacy">Privacy</a>', "/#/privacy"),
+])
+def test_privacy_link_anchors(tmp_path, link, expected):
     site = tmp_path / "site"
     site.mkdir()
-    (site / "index.html").write_text('<a href="#privacy">Privacy</a><h2 id="privacy">Privacy</h2>', encoding="utf-8")
+    (site / "index.html").write_text(f'{link}<h2 id="privacy">Privacy</h2>', encoding="utf-8")
     handler = functools.partial(QuietHandler, directory=str(site))
     server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
     threading.Thread(target=server.serve_forever, daemon=True).start()
@@ -112,7 +116,11 @@ def test_same_page_privacy_anchor_is_ignored(tmp_path):
         sites = tmp_path / "sites.txt"
         sites.write_text(f"http://localhost:{server.server_address[1]}/\n", encoding="utf-8")
         [path] = fetcher.run(sites, tmp_path / "raw")
-        assert json.loads(path.read_text(encoding="utf-8"))["privacy_policy"] is None
+        policy = json.loads(path.read_text(encoding="utf-8"))["privacy_policy"]
+        if expected is None:
+            assert policy is None
+        else:
+            assert policy["url"].endswith(expected) and "Privacy" in policy["text"]
     finally:
         server.shutdown()
         server.server_close()

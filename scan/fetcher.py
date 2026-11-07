@@ -33,8 +33,9 @@ FIND_PRIVACY_LINK_JS = """
     const text = (a.innerText || a.textContent || '').toLowerCase();
     const href = (a.getAttribute('href') || '').toLowerCase();
     if (words.some(w => text.includes(w) || href.includes(w))) {
-      const target = a.href.split('#')[0];
-      if (target.startsWith('http') && target !== here) return target;
+      const [target, hash = ''] = a.href.split('#');
+      const samePageAnchor = target === here && !hash.startsWith('/') && !hash.startsWith('!');
+      if (a.href.startsWith('http') && !samePageAnchor) return a.href;
     }
   }
   return null;
