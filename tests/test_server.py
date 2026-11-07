@@ -120,6 +120,9 @@ def test_scan_fixture_merges_into_findings(api, tmp_path, fixture_port):
     "file:///etc/passwd",
     "ftp://x/",
     "http://user:pass@example.com/",
+    "http://[::1",
+    "[::1",
+    "http://example.com:99999/",
     "",
 ])
 def test_rejects_unsafe_urls(strict_api, tmp_path, url):

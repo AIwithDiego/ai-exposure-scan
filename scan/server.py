@@ -71,6 +71,15 @@ def check_host(host, port, allow_fixture=False):
         raise Rejected(f"{host} points to a private or local network address, so we won't scan it.")
 
 
+def _split(text):
+    try:
+        parts = urlsplit(text)
+        parts.hostname, parts.port  # noqa: B018 - both raise ValueError on malformed hosts/ports
+        return parts
+    except ValueError:
+        raise Rejected("That doesn't look like a website address. Check it and try again.")
+
+
 def normalise_url(text, allow_fixture=False):
     """Clean up what the user typed into an http(s) URL with a path. Raise Rejected if it isn't scannable."""
     if not isinstance(text, str) or not text.strip():
@@ -79,15 +88,12 @@ def normalise_url(text, allow_fixture=False):
     if len(text) > MAX_URL:
         raise Rejected("That address is too long.")
     if not HAS_SCHEME.match(text):
-        bare = urlsplit("//" + text).hostname or ""
+        bare = _split("//" + text).hostname or ""
         text = ("http://" if bare in FIXTURE_HOSTS else "https://") + text
-    parts = urlsplit(text)
-    if parts.scheme.lower() not in ("http", "https"):
+    if HAS_SCHEME.match(text).group(0)[:-3].lower() not in ("http", "https"):
         raise Rejected("Only http:// and https:// websites can be scanned.")
-    try:
-        port = parts.port
-    except ValueError:
-        raise Rejected("That address has an invalid port.")
+    parts = _split(text)
+    port = parts.port
     host = (parts.hostname or "").rstrip(".")
     if not host:
         raise Rejected("That address has no website name in it.")
