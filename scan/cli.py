@@ -101,6 +101,12 @@ def cmd_all(args):
     return 0
 
 
+def cmd_serve(args):
+    from scan import server
+
+    return server.serve(args.port, args.out, args.allow_fixture)
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="python -m scan", description="AI Exposure Scan pipeline")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -109,10 +115,16 @@ def main(argv=None):
         "detect": (cmd_detect, "run plain-code checks on out/raw/*.json and write out/findings.json"),
         "policy": (cmd_policy, "read privacy policies and add disclosure findings"),
         "all": (cmd_all, "fetch, detect and policy in order, then copy findings.json to the dashboard"),
+        "serve": (cmd_serve, "serve the built dashboard and a scan-one-site API (POST /api/scan)"),
     }
     for name, (func, help_text) in commands.items():
         p = sub.add_parser(name, help=help_text)
-        p.add_argument("--sites", default=DEFAULT_SITES, help="file with one domain or URL per line")
+        if name == "serve":
+            p.add_argument("--port", type=int, default=8000, help="port to listen on (default: 8000)")
+            p.add_argument("--allow-fixture", action="store_true",
+                           help="allow scanning the local fixture at localhost:8765")
+        else:
+            p.add_argument("--sites", default=DEFAULT_SITES, help="file with one domain or URL per line")
         p.add_argument("--out", default=DEFAULT_OUT, help="output directory (default: out)")
         if name == "all":
             p.add_argument("--no-dashboard", action="store_true",
