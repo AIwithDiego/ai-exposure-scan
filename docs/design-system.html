@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AI Exposure Scan · Design system (proposal)</title>
+<title>AI Exposure Scan · Design system v0.2 (proposal)</title>
 
 <!--
   Two style blocks:
@@ -13,47 +13,60 @@
 -->
 <style id="app-css">
 /* ==========================================================
-   AI Exposure Scan — "Shield" dark theme (proposal)
+   AI Exposure Scan — light theme, v2 tokens (proposal)
+   Same light base as dashboard/src/styles.css; only the tokens
+   and component rules change.
    ========================================================== */
 :root {
-  /* Surfaces */
-  --bg: #0d0a14;
-  --surface: #16121f;
-  --surface-2: #1c1728;
-  --surface-3: #241e33;
-  --inset: #0a0810;
-  --border: #2c2540;
-  --border-strong: #3d3456;
+  /* Surfaces: card vs page ≥ 1.5:1 so panels hold up on a projector */
+  --bg: #cbd1da;
+  --surface: #ffffff;
+  --surface-2: #f1f3f6;
+  --inset: #f6f7f9;
+  --track: #e5e7eb;
+
+  /* Lines: outlines ≥ 3:1 against both card and page; dividers ≥ 3:1 inside cards */
+  --border: #6b7484;
+  --border-strong: #4b5563;
+  --divider: #8a94a3;
 
   /* Text */
-  --text: #ece9f3;
-  --muted: #9a93ad;
-  --subtle: #8e87a4;
-  --link: #b9a2ff;
+  --text: #111827;
+  --muted: #3f4754;
+  --subtle: #4b5563;
+  --link: #1e40af;
 
-  /* Brand accents */
-  --accent: #e8542f;
-  --accent-strong: #c94420;
-  --accent-hover: #f97316;
-  --accent-soft: rgba(232, 84, 47, 0.14);
-  --violet: #8b5cf6;
-  --violet-text: #a78bfa;
-  --violet-soft: rgba(139, 92, 246, 0.16);
-  --teal: #2dd4a7;
-  --teal-soft: rgba(45, 212, 167, 0.14);
+  /* Accent: blue, kept well away from red "high" */
+  --accent: #1d4ed8;
+  --accent-hover: #1e40af;
+  --accent-soft: #e3eafc;
+  --focus: #1d4ed8;
 
-  /* Severity (text colour + translucent background) */
-  --high: #ff7a55;
-  --high-solid: #e8542f;
-  --high-soft: rgba(232, 84, 47, 0.16);
-  --medium: #f5a524;
-  --medium-soft: rgba(245, 165, 36, 0.14);
-  --low: #a78bfa;
-  --low-soft: rgba(139, 92, 246, 0.16);
-  --info: #a8a1bb;
-  --info-soft: rgba(154, 147, 173, 0.14);
-  --good: #2dd4a7;
-  --good-soft: rgba(45, 212, 167, 0.14);
+  /* Severity: a lightness ramp, darkest = most urgent */
+  --high: #b42318;
+  --high-on: #ffffff;
+  --high-soft: #fde4e1;
+  --medium: #f5b942;
+  --medium-on: #5c3a06;
+  --medium-soft: #fdf0d4;
+  --low: #e2e8f0;
+  --low-on: #334155;
+  --low-line: #94a3b8;
+  --info: #ffffff;
+  --info-on: #4b5563;
+
+  /* Status (scores, EU tags, bars) */
+  --good: #15803d;
+  --good-on: #14532d;
+  --good-soft: #dcfce7;
+  --fair: #b45309;
+  --fair-on: #78350f;
+  --fair-soft: #fef3c7;
+  --poor: #b42318;
+  --poor-on: #991b1b;
+  --poor-soft: #fee2e2;
+  --none-on: #3f4754;
+  --none-soft: #e5e7eb;
 
   /* Type */
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -85,37 +98,24 @@
   --radius-xl: 14px;
   --radius-pill: 999px;
 
-  /* Elevation + glow */
-  --shadow-1: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-2: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 12px 32px -12px rgba(0, 0, 0, 0.7);
-  --glow-accent: 0 0 0 1px rgba(232, 84, 47, 0.45), 0 8px 24px -6px rgba(232, 84, 47, 0.55);
-  --glow-violet: 0 0 0 1px rgba(139, 92, 246, 0.4), 0 8px 24px -8px rgba(139, 92, 246, 0.5);
-  --glow-teal: 0 0 0 1px rgba(45, 212, 167, 0.35), 0 8px 24px -8px rgba(45, 212, 167, 0.45);
-  --ring: 0 0 0 2px var(--bg), 0 0 0 4px rgba(232, 84, 47, 0.7);
+  /* Elevation: small, neutral, no glows */
+  --shadow-1: 0 1px 2px rgba(17, 24, 39, 0.08);
+  --shadow-2: 0 8px 24px -8px rgba(17, 24, 39, 0.25);
 
   font-family: var(--font-sans);
   font-size: 16px;
   line-height: 1.5;
   color: var(--text);
   background: var(--bg);
-  color-scheme: dark;
-  -webkit-font-smoothing: antialiased;
+  color-scheme: light;
 }
 
 * { box-sizing: border-box; }
-body {
-  margin: 0;
-  background:
-    radial-gradient(1200px 600px at 100% -10%, rgba(139, 92, 246, 0.10), transparent 60%),
-    radial-gradient(900px 500px at -10% 110%, rgba(232, 84, 47, 0.08), transparent 60%),
-    var(--bg);
-  background-attachment: fixed;
-  min-height: 100vh;
-}
+body { margin: 0; background: var(--bg); min-height: 100vh; }
 h1, h2, h3, h4 { margin: 0; line-height: 1.25; letter-spacing: -0.01em; }
 a { color: var(--link); word-break: break-all; text-underline-offset: 2px; }
-a:hover { color: #d4c6ff; }
-:focus-visible { outline: none; box-shadow: var(--ring); border-radius: var(--radius-sm); }
+a:hover { color: var(--text); }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
 /* Layout (current App.jsx) */
 .page { max-width: 1040px; margin: 0 auto; padding: 32px 24px 64px; }
@@ -128,7 +128,7 @@ a:hover { color: #d4c6ff; }
 
 /* Surfaces */
 .panel, .card {
-  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-1);
@@ -136,14 +136,9 @@ a:hover { color: #d4c6ff; }
 .panel { padding: 24px; margin-bottom: 24px; }
 .panel h2 { font-size: var(--text-lg); font-weight: 600; margin-bottom: 8px; }
 
-/* Stat cards */
+/* Stat cards (not clickable: no hover state) */
 .cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 24px; }
-.total { padding: 16px; position: relative; overflow: hidden; transition: border-color .15s, box-shadow .15s; }
-.total::after {
-  content: ""; position: absolute; right: -14px; top: -14px; width: 72px; height: 72px; opacity: .5; pointer-events: none;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='%233d3456' stroke-width='2'%3E%3Cpath d='M50 4 90 27v46L50 96 10 73V27z'/%3E%3Cpath d='M50 22 74 36v28L50 78 26 64V36z'/%3E%3C/svg%3E") no-repeat center / contain;
-}
-.total:hover { border-color: var(--border-strong); box-shadow: var(--glow-violet); }
+.total { padding: 16px; }
 .total-count { font-size: var(--text-xl); font-weight: 700; font-variant-numeric: tabular-nums; }
 .total-label { color: var(--muted); font-size: var(--text-sm); }
 
@@ -152,65 +147,58 @@ a:hover { color: #d4c6ff; }
 .destination-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
 .destination-name { font-weight: 600; }
 .destination-count { margin-left: auto; font-variant-numeric: tabular-nums; }
-.bar { height: 8px; background: var(--surface-3); border-radius: var(--radius-pill); overflow: hidden; margin-bottom: 6px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.03); }
+.bar { height: 10px; background: var(--track); border-radius: var(--radius-pill); overflow: hidden; margin-bottom: 6px; }
 .bar-fill { height: 100%; border-radius: var(--radius-pill); }
-.bar-outside { background: linear-gradient(90deg, var(--accent), var(--medium)); box-shadow: 0 0 12px rgba(245, 165, 36, 0.45); }
-.bar-eu { background: linear-gradient(90deg, #1fa385, var(--teal)); box-shadow: 0 0 12px rgba(45, 212, 167, 0.4); }
-.tag { font-size: var(--text-xs); font-weight: 500; padding: 2px 10px; border-radius: var(--radius-pill); border: 1px solid transparent; }
-.tag-outside { background: var(--medium-soft); color: var(--medium); border-color: rgba(245, 165, 36, 0.28); }
-.tag-eu { background: var(--good-soft); color: var(--good); border-color: rgba(45, 212, 167, 0.28); }
+.bar-outside { background: var(--fair); }
+.bar-eu { background: var(--good); }
+.tag { font-size: var(--text-xs); font-weight: 600; padding: 2px 10px; border-radius: var(--radius-pill); border: 1px solid transparent; }
+.tag-outside { background: var(--fair-soft); color: var(--fair-on); border-color: var(--fair); }
+.tag-eu { background: var(--good-soft); color: var(--good-on); border-color: var(--good); }
 
 /* Sites table */
 .sites { width: 100%; border-collapse: collapse; margin-top: 8px; }
-.sites th { text-align: left; font-weight: 600; color: var(--subtle); font-size: var(--text-overline); text-transform: uppercase; letter-spacing: .08em; padding: 8px 12px; border-bottom: 1px solid var(--border); }
-.sites td { padding: 12px; border-bottom: 1px solid var(--border); vertical-align: middle; font-variant-numeric: tabular-nums; }
-.sites tbody tr { cursor: pointer; transition: background .12s; }
+.sites th { text-align: left; font-weight: 600; color: var(--subtle); font-size: var(--text-overline); text-transform: uppercase; letter-spacing: .08em; padding: 8px 12px; border-bottom: 1px solid var(--divider); }
+.sites td { padding: 12px; border-bottom: 1px solid var(--divider); vertical-align: middle; }
+.sites td[data-label="Score"], .sites td[data-label="High"], .sites td[data-label="Medium"] { font-variant-numeric: tabular-nums; }
+.sites tbody tr { cursor: pointer; }
 .sites tbody tr:last-child td { border-bottom: none; }
-.sites tbody tr:hover, .sites tbody tr:focus { background: var(--surface-3); outline: none; }
-.sites tbody tr:focus-visible { box-shadow: inset 3px 0 0 var(--accent); }
+.sites tbody tr:hover { background: var(--surface-2); }
+.sites tbody tr:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
 .site-name { font-weight: 600; }
 
 /* Score chips */
 .score { display: inline-block; min-width: 44px; text-align: center; font-weight: 700; padding: 2px 10px; border-radius: var(--radius-pill); border: 1px solid transparent; font-variant-numeric: tabular-nums; }
-.score-good { background: var(--good-soft); color: var(--good); border-color: rgba(45, 212, 167, 0.3); }
-.score-fair { background: var(--medium-soft); color: var(--medium); border-color: rgba(245, 165, 36, 0.3); }
-.score-poor { background: var(--high-soft); color: var(--high); border-color: rgba(232, 84, 47, 0.35); }
-.score-none { background: var(--info-soft); color: var(--info); border-color: var(--border); font-weight: 600; }
+.score-good { background: var(--good-soft); color: var(--good-on); border-color: var(--good); }
+.score-fair { background: var(--fair-soft); color: var(--fair-on); border-color: var(--fair); }
+.score-poor { background: var(--poor-soft); color: var(--poor-on); border-color: var(--poor); }
+.score-none { background: var(--none-soft); color: var(--none-on); border-color: var(--border); font-weight: 600; }
 .score-large { font-size: var(--text-xl); padding: 6px 18px; border-radius: var(--radius-xl); }
-.score-large.score-good { box-shadow: var(--glow-teal); }
-.score-large.score-fair { box-shadow: 0 0 0 1px rgba(245, 165, 36, 0.35), 0 8px 24px -8px rgba(245, 165, 36, 0.45); }
-.score-large.score-poor { box-shadow: var(--glow-accent); }
 
 /* Buttons */
 .button {
-  font: inherit; font-weight: 500; cursor: pointer; background: var(--surface-2); color: var(--text);
+  font: inherit; font-weight: 500; cursor: pointer; background: var(--surface); color: var(--text);
   border: 1px solid var(--border-strong); border-radius: var(--radius); padding: 8px 14px; margin-bottom: 16px;
-  transition: background .15s, border-color .15s, box-shadow .15s;
 }
-.button:hover { background: var(--surface-3); border-color: #51466f; }
-.button:active { transform: translateY(1px); }
-.button-primary {
-  background: linear-gradient(180deg, #e0502b, var(--accent-strong)); color: #fff; font-weight: 600;
-  border-color: rgba(255, 140, 100, 0.35); box-shadow: var(--glow-accent);
-}
-.button-primary:hover { background: linear-gradient(180deg, #ea5a33, #d14a24); border-color: rgba(255, 160, 120, 0.5); }
+.button:hover { background: var(--surface-2); }
+.button-primary { background: var(--accent); color: #fff; font-weight: 600; border-color: var(--accent); }
+.button-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
 .button-small { padding: 2px 10px; margin: 0; font-size: var(--text-sm); }
-.button:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+.button:disabled { opacity: .5; cursor: not-allowed; }
 
 .site-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
 .site-head h2 { font-size: 1.5rem; }
 
-/* Error banner */
+/* Banner: neutral, for "couldn't scan" / "couldn't load" */
 .banner {
   display: flex; gap: 12px; align-items: flex-start;
-  background: var(--high-soft); color: #ffb39d; border: 1px solid rgba(232, 84, 47, 0.4);
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-left: 4px solid var(--border-strong);
   border-radius: var(--radius-lg); padding: 12px 16px; margin-bottom: 24px;
-  box-shadow: 0 8px 24px -12px rgba(232, 84, 47, 0.5);
 }
 .banner::before {
-  content: "!"; flex-shrink: 0; display: grid; place-items: center; width: 22px; height: 22px; margin-top: 1px;
-  border-radius: 50%; background: var(--accent); color: #fff; font-weight: 800; font-size: 13px;
-  box-shadow: 0 0 12px rgba(232, 84, 47, 0.6);
+  content: "i"; flex-shrink: 0; display: grid; place-items: center; width: 22px; height: 22px; margin-top: 1px;
+  border-radius: 50%; background: var(--none-soft); color: var(--muted); border: 1px solid var(--border);
+  font-weight: 700; font-size: 13px; font-family: Georgia, serif; font-style: italic;
 }
 
 /* Finding groups + cards */
@@ -223,53 +211,45 @@ a:hover { color: #d4c6ff; }
 .badges { display: flex; gap: 8px; flex-shrink: 0; }
 
 .pill, .method { font-size: var(--text-xs); font-weight: 600; padding: 2px 10px; border-radius: var(--radius-pill); text-transform: capitalize; border: 1px solid transparent; line-height: 1.5; }
-.pill::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: currentColor; margin-right: 6px; vertical-align: 1px; box-shadow: 0 0 6px currentColor; }
-.pill-high { background: var(--high-soft); color: var(--high); border-color: rgba(232, 84, 47, 0.35); }
-.pill-medium { background: var(--medium-soft); color: var(--medium); border-color: rgba(245, 165, 36, 0.3); }
-.pill-low { background: var(--low-soft); color: var(--low); border-color: rgba(139, 92, 246, 0.35); }
-.pill-info { background: var(--info-soft); color: var(--info); border-color: var(--border); }
-.method-detected { background: var(--surface-3); color: var(--text); border-color: var(--border-strong); }
-.method-judged { background: transparent; color: var(--violet-text); border: 1px dashed rgba(167, 139, 250, 0.6); cursor: help; }
+.pill-high { background: var(--high); color: var(--high-on); border-color: var(--high); }
+.pill-medium { background: var(--medium); color: var(--medium-on); border-color: var(--fair); }
+.pill-low { background: var(--low); color: var(--low-on); border-color: var(--low-line); }
+.pill-info { background: var(--info); color: var(--info-on); border-color: var(--border); font-weight: 500; }
+.method-detected { background: var(--surface-2); color: var(--text); border-color: var(--border); }
+.method-judged { background: transparent; color: var(--muted); border: 1px dashed var(--border-strong); cursor: help; }
 
 .evidence { margin-bottom: 14px; }
 .evidence-label { font-size: var(--text-overline); font-weight: 600; color: var(--subtle); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
 .evidence a, .evidence > span { font-family: var(--font-mono); font-size: var(--text-sm); }
 .snippet {
-  margin: 8px 0 0; padding: 10px 12px; background: var(--inset); border: 1px solid var(--border); border-radius: var(--radius-sm);
-  font-family: var(--font-mono); font-size: var(--text-sm); color: #d8cfee;
+  margin: 8px 0 0; padding: 10px 12px; background: var(--inset); border: 1px solid var(--divider); border-radius: var(--radius-sm);
+  font-family: var(--font-mono); font-size: var(--text-sm); color: var(--text);
   white-space: pre-wrap; word-break: break-word;
 }
 
-.fix { background: var(--violet-soft); border: 1px solid rgba(139, 92, 246, 0.28); border-left: 3px solid var(--violet); border-radius: var(--radius); padding: 12px 16px; }
+.fix { background: var(--accent-soft); border: 1px solid var(--accent); border-left-width: 4px; border-radius: var(--radius); padding: 12px 16px; }
 .fix-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-.fix-head strong { color: #d4c6ff; font-weight: 600; }
+.fix-head strong { font-weight: 600; }
 .fix p { margin: 6px 0 0; }
 
 /* Sidebar nav (new — needs a small layout change in App.jsx) */
 .shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 100vh; }
-.sidebar {
-  position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; gap: 24px; padding: 24px 16px;
-  background: linear-gradient(180deg, rgba(28, 23, 40, 0.9), rgba(13, 10, 20, 0.9)); border-right: 1px solid var(--border);
-}
-.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: .02em; padding: 0 8px; }
-.brand-mark { width: 28px; height: 28px; flex-shrink: 0; filter: drop-shadow(0 0 8px rgba(232, 84, 47, 0.55)); }
+.sidebar { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; gap: 24px; padding: 24px 16px; background: var(--surface); border-right: 1px solid var(--border); }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; padding: 0 8px; }
+.brand-mark { width: 28px; height: 28px; flex-shrink: 0; color: var(--accent); }
 .nav { display: grid; gap: 2px; }
-.nav-section { font-size: var(--text-overline); text-transform: uppercase; letter-spacing: .08em; color: var(--subtle); padding: 12px 12px 6px; }
+.nav-section { font-size: var(--text-overline); font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--subtle); padding: 12px 12px 6px; }
 .nav-item {
   position: relative; display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: var(--radius);
   color: var(--muted); text-decoration: none; font-size: var(--text-sm); font-weight: 500; word-break: normal;
-  transition: background .12s, color .12s;
 }
 .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
-.nav-item:hover { background: var(--surface-3); color: var(--text); }
-.nav-item.is-active, .nav-item[aria-current="page"] { background: var(--accent-soft); color: var(--text); }
+.nav-item:hover { background: var(--surface-2); color: var(--text); }
+.nav-item.is-active, .nav-item[aria-current="page"] { background: var(--accent-soft); color: var(--accent-hover); font-weight: 600; }
 .nav-item.is-active::before, .nav-item[aria-current="page"]::before {
-  content: ""; position: absolute; left: -16px; top: 6px; bottom: 6px; width: 3px; border-radius: 0 3px 3px 0;
-  background: var(--accent); box-shadow: 0 0 10px var(--accent);
+  content: ""; position: absolute; left: -16px; top: 6px; bottom: 6px; width: 3px; border-radius: 0 3px 3px 0; background: var(--accent);
 }
-.nav-item.is-active svg, .nav-item[aria-current="page"] svg { color: var(--accent); }
 .nav-count { margin-left: auto; font-size: var(--text-overline); font-variant-numeric: tabular-nums; color: var(--subtle); }
-.nav-item.is-active .nav-count { color: var(--high); }
 
 @media (max-width: 800px) {
   .cards { grid-template-columns: repeat(2, 1fr); }
@@ -277,7 +257,7 @@ a:hover { color: #d4c6ff; }
   .sidebar { position: static; height: auto; flex-direction: row; align-items: center; overflow-x: auto; padding: 12px 16px; border-right: none; border-bottom: 1px solid var(--border); }
   .nav { grid-auto-flow: column; }
   .nav-section { display: none; }
-  .nav-item.is-active::before, .nav-item[aria-current="page"]::before { left: 12px; right: 12px; top: auto; bottom: -13px; width: auto; height: 2px; border-radius: 2px; }
+  .nav-item.is-active::before, .nav-item[aria-current="page"]::before { left: 12px; right: 12px; top: auto; bottom: -13px; width: auto; height: 3px; border-radius: 2px; }
 }
 
 @media (max-width: 640px) {
@@ -292,68 +272,56 @@ a:hover { color: #d4c6ff; }
   .sites td.worst { text-align: right; }
   .finding-head { flex-direction: column; }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  * { transition: none !important; animation: none !important; }
-}
 </style>
 
 <style id="doc-css">
 /* ---------- Document chrome only (not part of the app) ---------- */
 .ds { display: grid; grid-template-columns: 260px minmax(0, 1fr); min-height: 100vh; }
-.ds-side {
-  position: sticky; top: 0; height: 100vh; overflow-y: auto; padding: 24px 16px 32px;
-  border-right: 1px solid var(--border); background: rgba(13, 10, 20, 0.85); backdrop-filter: blur(8px);
-}
-.ds-brand { display: flex; align-items: center; gap: 10px; padding: 0 8px 4px; font-weight: 700; letter-spacing: .02em; }
-.ds-brand small { display: block; font-weight: 500; color: var(--subtle); font-size: var(--text-overline); letter-spacing: .08em; text-transform: uppercase; }
+.ds-side { position: sticky; top: 0; height: 100vh; overflow-y: auto; padding: 24px 16px 32px; border-right: 1px solid var(--border); background: var(--surface); }
+.ds-brand { display: flex; align-items: center; gap: 10px; padding: 0 8px 4px; font-weight: 700; }
+.ds-brand small { display: block; font-weight: 600; color: var(--subtle); font-size: var(--text-overline); letter-spacing: .08em; text-transform: uppercase; }
 .ds-side h6 { margin: 20px 0 6px; padding: 0 12px; font-size: var(--text-overline); text-transform: uppercase; letter-spacing: .08em; color: var(--subtle); font-weight: 600; }
 .ds-side a { position: relative; display: block; padding: 6px 12px; border-radius: var(--radius); color: var(--muted); text-decoration: none; font-size: var(--text-sm); word-break: normal; }
-.ds-side a:hover { background: var(--surface-3); color: var(--text); }
-.ds-side a.is-active { background: var(--accent-soft); color: var(--text); }
-.ds-side a.is-active::before { content: ""; position: absolute; left: -16px; top: 5px; bottom: 5px; width: 3px; border-radius: 0 3px 3px 0; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+.ds-side a:hover { background: var(--surface-2); color: var(--text); }
+.ds-side a.is-active { background: var(--accent-soft); color: var(--accent-hover); font-weight: 600; }
+.ds-side a.is-active::before { content: ""; position: absolute; left: -16px; top: 5px; bottom: 5px; width: 3px; border-radius: 0 3px 3px 0; background: var(--accent); }
 .ds-menu { display: none; }
 
 .ds-main { padding: 48px 48px 96px; max-width: 1120px; width: 100%; }
-.ds-hero { position: relative; display: grid; grid-template-columns: 1fr 260px; gap: 32px; align-items: center; padding: 40px; margin-bottom: 56px; border: 1px solid var(--border); border-radius: var(--radius-xl); overflow: hidden;
-  background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='64' viewBox='0 0 56 64' fill='none' stroke='%23241e33' stroke-width='1'%3E%3Cpath d='M28 0 56 16v32L28 64 0 48V16z'/%3E%3C/svg%3E"),
-    radial-gradient(500px 300px at 85% 50%, rgba(232, 84, 47, 0.16), transparent 70%),
-    linear-gradient(180deg, var(--surface-2), var(--surface)); }
-.ds-eyebrow { font-size: var(--text-overline); letter-spacing: .12em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+.ds-hero { padding: 36px 40px; margin-bottom: 56px; border: 1px solid var(--border); border-radius: var(--radius-xl); background: var(--surface); box-shadow: var(--shadow-1); }
+.ds-eyebrow { font-size: var(--text-overline); letter-spacing: .12em; text-transform: uppercase; color: var(--link); font-weight: 700; }
 .ds-hero h1 { font-size: var(--text-display); font-weight: 700; margin: 8px 0 12px; letter-spacing: -0.02em; }
-.ds-hero p { color: var(--muted); max-width: 56ch; margin: 0 0 20px; }
+.ds-hero p { color: var(--muted); max-width: 68ch; margin: 0 0 20px; }
 .ds-hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
 .ds-hero-actions .button { margin: 0; }
-.ds-radar { width: 100%; max-width: 260px; justify-self: center; filter: drop-shadow(0 0 24px rgba(232, 84, 47, 0.25)); }
+.ds-changes { margin: 0 0 20px; padding-left: 18px; color: var(--muted); display: grid; gap: 4px; max-width: 72ch; }
+.ds-changes b { color: var(--text); }
+.ds-changes a, .ds-lead a { word-break: normal; }
 
 .ds-section { padding-top: 24px; margin-bottom: 64px; scroll-margin-top: 16px; }
 .ds-section > h2 { font-size: var(--text-xl); font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 12px; }
-.ds-section > h2 .ds-num { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--accent); font-weight: 500; }
+.ds-section > h2 .ds-num { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--link); font-weight: 600; }
 .ds-section > p.ds-lead { color: var(--muted); margin: 0 0 24px; max-width: 70ch; }
 .ds-sub { font-size: var(--text-md); font-weight: 600; margin: 32px 0 12px; }
 
 .ds-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
 .ds-swatch { border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; background: var(--surface); }
-.ds-chip { height: 72px; border-bottom: 1px solid var(--border); position: relative; }
-.ds-chip.is-glow { box-shadow: inset 0 -20px 30px -20px rgba(0,0,0,.5); }
+.ds-chip { height: 64px; border-bottom: 1px solid var(--divider); }
 .ds-meta { padding: 10px 12px; display: grid; gap: 2px; }
 .ds-meta b { font-size: var(--text-sm); font-weight: 600; }
 .ds-meta code, .ds-code-inline { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
-.ds-meta .ds-cr { font-size: 11px; color: var(--subtle); font-family: var(--font-mono); }
-.ds-cr .ok { color: var(--good); } .ds-cr .warn { color: var(--medium); } .ds-cr .bad { color: var(--high); }
+.ds-cr { font-size: 12px; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.ds-cr .ok { color: var(--good-on); font-weight: 600; } .ds-cr .bad { color: var(--poor-on); font-weight: 600; }
 
 .ds-sev { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
 .ds-sev-row { display: flex; align-items: center; gap: 12px; padding: 14px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); }
-.ds-sev-row .ds-dot { width: 32px; height: 32px; border-radius: var(--radius); flex-shrink: 0; }
+.ds-sev-row .ds-dot { width: 32px; height: 32px; border-radius: var(--radius); flex-shrink: 0; border: 1px solid var(--border); }
 .ds-sev-row div { display: grid; }
 .ds-sev-row b { font-size: var(--text-sm); }
 .ds-sev-row code { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
 
 .ds-demo { border: 1px solid var(--border); border-radius: var(--radius-xl); overflow: hidden; background: var(--surface); margin-bottom: 16px; }
-.ds-stage { padding: 28px; background:
-  radial-gradient(400px 200px at 0% 0%, rgba(139, 92, 246, 0.06), transparent 70%), var(--bg);
-  border-bottom: 1px solid var(--border); }
+.ds-stage { padding: 28px; background: var(--bg); border-bottom: 1px solid var(--border); }
 .ds-stage.is-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
 .ds-stage .button { margin-bottom: 0; }
 .ds-stage .panel:last-child, .ds-stage .card:last-child, .ds-stage .banner:last-child { margin-bottom: 0; }
@@ -361,14 +329,14 @@ a:hover { color: #d4c6ff; }
 .ds-doc h5 { margin: 0 0 8px; font-size: var(--text-overline); text-transform: uppercase; letter-spacing: .08em; color: var(--subtle); }
 .ds-doc ul { margin: 0; padding-left: 18px; color: var(--muted); display: grid; gap: 4px; }
 .ds-doc ul b { color: var(--text); font-weight: 600; }
-.ds-doc pre, .ds-pre { margin: 0; padding: 12px 14px; background: var(--inset); border: 1px solid var(--border); border-radius: var(--radius); font-family: var(--font-mono); font-size: 12.5px; line-height: 1.6; color: #d8cfee; overflow-x: auto; white-space: pre; }
-.ds-doc code, .ds-section p code, .ds-table code { font-family: var(--font-mono); font-size: .92em; color: #d4c6ff; background: var(--violet-soft); padding: 1px 6px; border-radius: 4px; }
-.ds-doc pre code { background: none; padding: 0; color: inherit; }
-.tk { color: #ff9c7a; } .ta { color: var(--teal); } .tv { color: var(--medium); } .tc { color: var(--subtle); }
+.ds-doc pre, .ds-pre { margin: 0; padding: 12px 14px; background: var(--inset); border: 1px solid var(--border); border-radius: var(--radius); font-family: var(--font-mono); font-size: 12.5px; line-height: 1.6; color: var(--text); overflow-x: auto; white-space: pre; }
+.ds-doc code, .ds-section p code, .ds-table code, .ds-changes code { font-family: var(--font-mono); font-size: .92em; color: var(--text); background: var(--surface-2); border: 1px solid var(--divider); padding: 0 5px; border-radius: 4px; }
+.ds-doc pre code { background: none; border: 0; padding: 0; color: inherit; }
+.tk { color: #1e40af; } .ta { color: #166534; } .tv { color: #92400e; } .tc { color: var(--subtle); }
 
-.ds-label { display: block; font-size: var(--text-overline); text-transform: uppercase; letter-spacing: .08em; color: var(--subtle); margin-bottom: 8px; width: 100%; }
+.ds-label { display: block; font-size: var(--text-overline); font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--subtle); margin-bottom: 8px; width: 100%; }
 
-.ds-type-row { display: grid; grid-template-columns: 180px 1fr; gap: 24px; align-items: baseline; padding: 16px 0; border-bottom: 1px solid var(--border); }
+.ds-type-row { display: grid; grid-template-columns: 180px 1fr; gap: 24px; align-items: baseline; padding: 16px 0; border-bottom: 1px solid var(--divider); }
 .ds-type-row:last-child { border-bottom: none; }
 .ds-type-row code { font-family: var(--font-mono); font-size: 12px; color: var(--muted); line-height: 1.6; }
 .ds-type-row .ds-sample { overflow-wrap: anywhere; }
@@ -376,13 +344,16 @@ a:hover { color: #d4c6ff; }
 .ds-scroll { overflow-x: auto; }
 .ds-table code { white-space: nowrap; }
 .ds-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
-.ds-table th { text-align: left; font-size: var(--text-overline); text-transform: uppercase; letter-spacing: .08em; color: var(--subtle); font-weight: 600; padding: 8px 12px; border-bottom: 1px solid var(--border); }
-.ds-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; color: var(--muted); }
+.ds-table th { text-align: left; font-size: var(--text-overline); text-transform: uppercase; letter-spacing: .08em; color: var(--subtle); font-weight: 600; padding: 8px 12px; border-bottom: 1px solid var(--divider); }
+.ds-table td { padding: 10px 12px; border-bottom: 1px solid var(--divider); vertical-align: middle; color: var(--muted); }
+.ds-table tr:last-child td { border-bottom: none; }
 .ds-table td:first-child { color: var(--text); }
-.ds-space-bar { height: 12px; border-radius: 3px; background: linear-gradient(90deg, var(--accent), var(--medium)); box-shadow: 0 0 10px rgba(232, 84, 47, .35); }
+.ds-table td.ds-n { font-variant-numeric: tabular-nums; font-family: var(--font-mono); white-space: nowrap; }
+.ds-pair { display: inline-flex; align-items: center; justify-content: center; min-width: 56px; height: 28px; padding: 0 8px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; }
+.ds-space-bar { height: 12px; border-radius: 3px; background: var(--accent); }
 
 .ds-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; }
-.ds-tile { height: 110px; border-radius: var(--radius-lg); background: var(--surface-2); border: 1px solid var(--border); display: grid; place-items: end start; padding: 12px; }
+.ds-tile { height: 110px; border-radius: var(--radius-lg); background: var(--surface); border: 1px solid var(--border); display: grid; place-items: end start; padding: 12px; }
 .ds-tile code { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
 
 .ds-compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
@@ -394,7 +365,7 @@ a:hover { color: #d4c6ff; }
 .ds-css-wrap .button { position: absolute; top: 10px; right: 10px; }
 #ds-css-source { max-height: 520px; overflow: auto; }
 
-.ds-footer { color: var(--subtle); font-size: var(--text-sm); border-top: 1px solid var(--border); padding-top: 24px; }
+.ds-footer { color: var(--muted); font-size: var(--text-sm); border-top: 1px solid var(--border); padding-top: 24px; }
 
 /* The demo of the app sidebar is rendered inside a frame, not fixed */
 .ds-frame { display: grid; grid-template-columns: 240px minmax(0, 1fr); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; min-height: 420px; }
@@ -404,8 +375,7 @@ a:hover { color: #d4c6ff; }
 
 @media (max-width: 1000px) {
   .ds-main { padding: 32px 24px 80px; }
-  .ds-hero { grid-template-columns: 1fr; padding: 28px; }
-  .ds-radar { max-width: 200px; }
+  .ds-hero { padding: 28px; }
   .ds-doc { grid-template-columns: 1fr; }
 }
 @media (max-width: 800px) {
@@ -431,12 +401,9 @@ a:hover { color: #d4c6ff; }
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
-    <linearGradient id="g-accent" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f97316"/><stop offset="1" stop-color="#e8542f"/></linearGradient>
-    <linearGradient id="g-violet" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a78bfa"/><stop offset="1" stop-color="#6d3fe0"/></linearGradient>
     <symbol id="mark" viewBox="0 0 32 32">
-      <path d="M16 2 28 9v14l-12 7L4 23V9z" fill="none" stroke="url(#g-accent)" stroke-width="2.2" stroke-linejoin="round"/>
-      <path d="M16 9 22 12.5v7L16 23l-6-3.5v-7z" fill="url(#g-violet)" opacity=".9"/>
-      <circle cx="16" cy="16" r="2.2" fill="#fff"/>
+      <path d="M16 2 28 9v14l-12 7L4 23V9z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>
+      <path d="M16 9 22 12.5v7L16 23l-6-3.5v-7z" fill="currentColor" opacity=".85"/>
     </symbol>
     <symbol id="i-grid" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></g></symbol>
     <symbol id="i-globe" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></g></symbol>
@@ -445,7 +412,6 @@ a:hover { color: #d4c6ff; }
     <symbol id="i-key" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M17 6l3 3M15 8l2 2"/></g></symbol>
     <symbol id="i-eye" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></g></symbol>
     <symbol id="i-bot" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4M9 12h.01M15 12h.01M9 16h6"/></g></symbol>
-    <symbol id="i-hex" viewBox="0 0 24 24"><path d="M12 2.5 20.5 7.5v9L12 21.5 3.5 16.5v-9z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
   </defs>
 </svg>
 
@@ -455,7 +421,7 @@ a:hover { color: #d4c6ff; }
     <div class="ds-side-head">
       <div class="ds-brand">
         <svg width="28" height="28" class="brand-mark"><use href="#mark"/></svg>
-        <div>AI Exposure Scan<small>Design system · v0.1</small></div>
+        <div>AI Exposure Scan<small>Design system · v0.2</small></div>
       </div>
       <button class="button button-small ds-menu" type="button" aria-expanded="false" aria-controls="ds-nav" id="ds-menu">Menu</button>
     </div>
@@ -465,9 +431,10 @@ a:hover { color: #d4c6ff; }
       <a href="#principles">Principles</a>
       <h6>Foundations</h6>
       <a href="#colors">Color tokens</a>
+      <a href="#contrast">Contrast checks</a>
       <a href="#type">Typography</a>
       <a href="#spacing">Spacing &amp; radius</a>
-      <a href="#elevation">Shadows &amp; glow</a>
+      <a href="#elevation">Shadows</a>
       <h6>Components</h6>
       <a href="#c-sidebar">Sidebar nav</a>
       <a href="#c-buttons">Buttons</a>
@@ -479,7 +446,7 @@ a:hover { color: #d4c6ff; }
       <a href="#c-table">Sites table</a>
       <a href="#c-sitehead">Site header</a>
       <a href="#c-finding">Finding cards</a>
-      <a href="#c-banner">Error banner</a>
+      <a href="#c-banner">Banner</a>
       <h6>Handoff</h6>
       <a href="#migration">Migration notes</a>
       <a href="#stylesheet">Proposed stylesheet</a>
@@ -490,60 +457,50 @@ a:hover { color: #d4c6ff; }
 
     <!-- ===================== Hero ===================== -->
     <section class="ds-hero" id="intro">
-      <div>
-        <div class="ds-eyebrow">Proposal · Shield theme</div>
-        <h1>A dark, protective look for AI Exposure Scan</h1>
-        <p>Near-black violet surfaces, one warm orange accent for action and danger, violet and teal for information and safety. Every component below uses the class names that <code class="ds-code-inline">dashboard/src/App.jsx</code> already renders, so restyling is mostly a stylesheet swap.</p>
-        <div class="ds-hero-actions">
-          <a class="button button-primary" href="#c-sidebar" style="text-decoration:none">See components</a>
-          <a class="button" href="#stylesheet" style="text-decoration:none">Get the CSS</a>
-        </div>
+      <div class="ds-eyebrow">Proposal · v0.2 · light base</div>
+      <h1>Design tokens for AI Exposure Scan</h1>
+      <p>This version keeps the dashboard's current light look and only borrows a token system: named colours, type, spacing and radius. Every component below uses the class names that <code class="ds-code-inline">dashboard/src/App.jsx</code> already renders, so applying it is mostly a stylesheet swap.</p>
+      <ul class="ds-changes">
+        <li><b>Blue accent</b> (<code>--accent #1d4ed8</code>), kept clearly apart from red "high".</li>
+        <li><b>Severity is a lightness ramp:</b> solid red high, amber medium, pale slate low, outlined grey info. Violet is gone.</li>
+        <li><b>Neutral banner</b> for "Couldn't scan", with no red and no glow.</li>
+        <li><b>Projector-safe contrast:</b> cards are ≥ 1.5:1 against the page and borders are ≥ 3:1. See <a href="#contrast">Contrast checks</a>.</li>
+        <li><b>No glows</b>, and no hover effect on stat cards, which can't be clicked.</li>
+        <li><code>tabular-nums</code> only on number cells: counts, scores and the High/Medium columns.</li>
+      </ul>
+      <div class="ds-hero-actions">
+        <a class="button button-primary" href="#c-sidebar" style="text-decoration:none">See components</a>
+        <a class="button" href="#stylesheet" style="text-decoration:none">Get the CSS</a>
       </div>
-      <svg class="ds-radar" viewBox="0 0 240 240" role="img" aria-label="Radar motif">
-        <defs>
-          <radialGradient id="rg" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#e8542f" stop-opacity=".35"/><stop offset="1" stop-color="#e8542f" stop-opacity="0"/></radialGradient>
-        </defs>
-        <circle cx="120" cy="120" r="110" fill="url(#rg)"/>
-        <g fill="none" stroke="#3d3456" stroke-width="1">
-          <path d="M120 20 206.6 70v100L120 220 33.4 170V70z"/>
-          <path d="M120 45 185 82.5v75L120 195 55 157.5v-75z"/>
-          <path d="M120 70 163.3 95v50L120 170 76.7 145V95z"/>
-          <path d="M120 95 141.7 107.5v25L120 145 98.3 132.5v-25z"/>
-          <path d="M120 20V220M33.4 70 206.6 170M206.6 70 33.4 170"/>
-        </g>
-        <path d="M120 52 178 87 170 160 120 186 82 150 60 85z" fill="rgba(139,92,246,.22)" stroke="#8b5cf6" stroke-width="1.5"/>
-        <path d="M120 78 196 74 158 140 120 206 92 136 50 110z" fill="rgba(232,84,47,.28)" stroke="#f97316" stroke-width="1.8"/>
-        <path d="M120 100 150 102 142 132 120 150 102 130 96 108z" fill="rgba(45,212,167,.25)" stroke="#2dd4a7" stroke-width="1.5"/>
-        <g fill="#fff"><circle cx="196" cy="74" r="3"/><circle cx="120" cy="206" r="3"/><circle cx="50" cy="110" r="3"/></g>
-      </svg>
     </section>
 
     <!-- ===================== Principles ===================== -->
     <section class="ds-section" id="principles">
       <h2><span class="ds-num">00</span>Principles</h2>
-      <p class="ds-lead">Owners of small sites read this dashboard. It should feel like a security tool, but never shout more than the finding deserves.</p>
+      <p class="ds-lead">Owners of small sites read this dashboard, often on a shared screen or a projector. It should be calm, legible from the back of the room, and never shout more than the finding deserves.</p>
       <div class="ds-compare">
-        <div><h5>One loud colour</h5><ul><li>Orange-red means "act now": primary buttons, the active nav item, high severity, poor scores.</li><li>Nothing decorative is orange.</li></ul></div>
-        <div><h5>Calm by default</h5><ul><li>Info and pass states use violet, gray and teal.</li><li>Glows only sit on accents, never on whole panels.</li></ul></div>
+        <div><h5>Red means danger, only</h5><ul><li>Red is used for high severity and poor scores, nothing else.</li><li>Actions, links and the active nav item use blue.</li></ul></div>
+        <div><h5>Urgency = darkness</h5><ul><li>Severity fills get lighter as urgency drops, so the order still reads in greyscale or on a washed-out projector.</li></ul></div>
         <div><h5>Evidence is literal</h5><ul><li>URLs and snippets are always monospace on an inset surface, so it is clear what was actually seen.</li></ul></div>
-        <div><h5>Thin lines, soft corners</h5><ul><li>1px violet-gray borders, 8–10px radius, generous 24px panel padding.</li><li>Hexagon and radar motifs for brand moments only.</li></ul></div>
+        <div><h5>Visible edges</h5><ul><li>Cards ≥ 1.5:1 against the page, outlines ≥ 3:1, 8–10px radius and 24px panel padding.</li><li>Only things you can click react to hover.</li></ul></div>
       </div>
     </section>
 
     <!-- ===================== Colors ===================== -->
     <section class="ds-section" id="colors">
       <h2><span class="ds-num">01</span>Color tokens</h2>
-      <p class="ds-lead">All colours are CSS custom properties on <code>:root</code>. Contrast ratios are computed live against <code>--surface</code> (#16121f); AA body text needs 4.5:1.</p>
+      <p class="ds-lead">All colours are CSS custom properties on <code>:root</code>. Text swatches show their contrast against <code>--surface</code> (white), computed live; AA body text needs 4.5:1.</p>
 
       <h3 class="ds-sub">Surfaces &amp; lines</h3>
       <div class="ds-grid" data-swatches>
-        <div class="ds-swatch" data-token="--bg" data-name="Base"></div>
-        <div class="ds-swatch" data-token="--surface" data-name="Surface"></div>
-        <div class="ds-swatch" data-token="--surface-2" data-name="Surface raised"></div>
-        <div class="ds-swatch" data-token="--surface-3" data-name="Hover / track"></div>
+        <div class="ds-swatch" data-token="--bg" data-name="Page"></div>
+        <div class="ds-swatch" data-token="--surface" data-name="Card / panel"></div>
+        <div class="ds-swatch" data-token="--surface-2" data-name="Hover / quiet fill"></div>
         <div class="ds-swatch" data-token="--inset" data-name="Inset (code)"></div>
-        <div class="ds-swatch" data-token="--border" data-name="Border"></div>
-        <div class="ds-swatch" data-token="--border-strong" data-name="Border strong"></div>
+        <div class="ds-swatch" data-token="--track" data-name="Bar track"></div>
+        <div class="ds-swatch" data-token="--border" data-name="Outline (cards, controls)" data-contrast></div>
+        <div class="ds-swatch" data-token="--divider" data-name="Divider (inside cards)" data-contrast></div>
+        <div class="ds-swatch" data-token="--border-strong" data-name="Border strong" data-contrast></div>
       </div>
 
       <h3 class="ds-sub">Text</h3>
@@ -554,31 +511,69 @@ a:hover { color: #d4c6ff; }
         <div class="ds-swatch" data-token="--link" data-name="Link" data-contrast></div>
       </div>
 
-      <h3 class="ds-sub">Accents</h3>
+      <h3 class="ds-sub">Accent</h3>
       <div class="ds-grid" data-swatches>
-        <div class="ds-swatch" data-token="--accent" data-name="Accent (brand)" data-contrast data-glow="--glow-accent"></div>
-        <div class="ds-swatch" data-token="--accent-strong" data-name="Accent strong (button fill, white text)" data-contrast-white></div>
-        <div class="ds-swatch" data-token="--accent-hover" data-name="Accent hover / highlight" data-contrast></div>
-        <div class="ds-swatch" data-token="--violet" data-name="Violet" data-contrast data-glow="--glow-violet"></div>
-        <div class="ds-swatch" data-token="--violet-text" data-name="Violet text" data-contrast></div>
-        <div class="ds-swatch" data-token="--teal" data-name="Teal" data-contrast data-glow="--glow-teal"></div>
+        <div class="ds-swatch" data-token="--accent" data-name="Accent (buttons, active nav)" data-contrast-white></div>
+        <div class="ds-swatch" data-token="--accent-hover" data-name="Accent hover / on soft" data-contrast-white></div>
+        <div class="ds-swatch" data-token="--accent-soft" data-name="Accent soft (fix box, active nav)"></div>
       </div>
 
-      <h3 class="ds-sub">Severity &amp; status</h3>
-      <p class="muted small" style="margin:-4px 0 12px">Each status has a text colour and a <code>-soft</code> translucent fill for pills, tags and score chips.</p>
+      <h3 class="ds-sub">Severity ramp</h3>
+      <p class="muted small" style="margin:-4px 0 12px">Each level has a fill and an <code>-on</code> text colour. The fills step from dark to light as urgency drops. Only "high" is red, and nothing in the ramp is violet.</p>
       <div class="ds-sev">
-        <div class="ds-sev-row"><span class="ds-dot" style="background:var(--high-soft);box-shadow:inset 0 0 0 1px rgba(232,84,47,.5)"></span><div><b style="color:var(--high)">High</b><code>--high #ff7a55</code><code>--high-solid #e8542f</code><code>--high-soft</code></div></div>
-        <div class="ds-sev-row"><span class="ds-dot" style="background:var(--medium-soft);box-shadow:inset 0 0 0 1px rgba(245,165,36,.5)"></span><div><b style="color:var(--medium)">Medium</b><code>--medium #f5a524</code><code>--medium-soft</code></div></div>
-        <div class="ds-sev-row"><span class="ds-dot" style="background:var(--low-soft);box-shadow:inset 0 0 0 1px rgba(139,92,246,.5)"></span><div><b style="color:var(--low)">Low</b><code>--low #a78bfa</code><code>--low-soft</code></div></div>
-        <div class="ds-sev-row"><span class="ds-dot" style="background:var(--info-soft);box-shadow:inset 0 0 0 1px var(--border-strong)"></span><div><b style="color:var(--info)">Info</b><code>--info #a8a1bb</code><code>--info-soft</code></div></div>
-        <div class="ds-sev-row"><span class="ds-dot" style="background:var(--good-soft);box-shadow:inset 0 0 0 1px rgba(45,212,167,.5)"></span><div><b style="color:var(--good)">Good / pass</b><code>--good #2dd4a7</code><code>--good-soft</code></div></div>
+        <div class="ds-sev-row"><span class="ds-dot" style="background:var(--high);border-color:var(--high)"></span><div><b>High</b><code>--high #b42318</code><code>--high-on #ffffff</code></div></div>
+        <div class="ds-sev-row"><span class="ds-dot" style="background:var(--medium);border-color:var(--fair)"></span><div><b>Medium</b><code>--medium #f5b942</code><code>--medium-on #5c3a06</code></div></div>
+        <div class="ds-sev-row"><span class="ds-dot" style="background:var(--low);border-color:var(--low-line)"></span><div><b>Low</b><code>--low #e2e8f0</code><code>--low-on #334155</code></div></div>
+        <div class="ds-sev-row"><span class="ds-dot" style="background:var(--info)"></span><div><b>Info</b><code>--info #ffffff</code><code>--info-on #4b5563</code></div></div>
+      </div>
+
+      <h3 class="ds-sub">Status (scores, EU tags, bars)</h3>
+      <div class="ds-sev">
+        <div class="ds-sev-row"><span class="ds-dot" style="background:var(--good-soft);border-color:var(--good)"></span><div><b>Good / EU</b><code>--good #15803d</code><code>--good-on</code><code>--good-soft</code></div></div>
+        <div class="ds-sev-row"><span class="ds-dot" style="background:var(--fair-soft);border-color:var(--fair)"></span><div><b>Fair / outside EU</b><code>--fair #b45309</code><code>--fair-on</code><code>--fair-soft</code></div></div>
+        <div class="ds-sev-row"><span class="ds-dot" style="background:var(--poor-soft);border-color:var(--poor)"></span><div><b>Poor</b><code>--poor #b42318</code><code>--poor-on</code><code>--poor-soft</code></div></div>
+        <div class="ds-sev-row"><span class="ds-dot" style="background:var(--none-soft)"></span><div><b>None (couldn't scan)</b><code>--none-on</code><code>--none-soft</code></div></div>
+      </div>
+    </section>
+
+    <!-- ===================== Contrast ===================== -->
+    <section class="ds-section" id="contrast">
+      <h2><span class="ds-num">02</span>Contrast checks</h2>
+      <p class="ds-lead">These are computed live from the tokens on this page, so changing a token updates the table. The targets are tuned for projectors: ≥ 1.5:1 card vs page, ≥ 3:1 for borders and graphics, ≥ 4.5:1 for text.</p>
+      <div class="panel ds-scroll">
+        <table class="ds-table" id="ds-contrast">
+          <thead><tr><th>Pair</th><th>Sample</th><th>Tokens</th><th>Ratio</th><th>Target</th></tr></thead>
+          <tbody>
+            <tr data-fg="--surface" data-bg="--bg" data-min="1.5"><td>Card vs page</td></tr>
+            <tr data-fg="--border" data-bg="--surface" data-min="3"><td>Outline vs card</td></tr>
+            <tr data-fg="--border" data-bg="--bg" data-min="3"><td>Outline vs page</td></tr>
+            <tr data-fg="--divider" data-bg="--surface" data-min="3"><td>Divider vs card</td></tr>
+            <tr data-fg="--focus" data-bg="--surface" data-min="3"><td>Focus ring vs card</td></tr>
+            <tr data-fg="--text" data-bg="--surface" data-min="4.5"><td>Body text</td></tr>
+            <tr data-fg="--muted" data-bg="--bg" data-min="4.5"><td>Muted text on page</td></tr>
+            <tr data-fg="--subtle" data-bg="--surface" data-min="4.5"><td>Labels (12px caps)</td></tr>
+            <tr data-fg="--link" data-bg="--surface" data-min="4.5"><td>Link</td></tr>
+            <tr data-fg="#ffffff" data-bg="--accent" data-min="4.5"><td>Primary button</td></tr>
+            <tr data-fg="--accent-hover" data-bg="--accent-soft" data-min="4.5"><td>Active nav item</td></tr>
+            <tr data-fg="--high-on" data-bg="--high" data-min="4.5"><td>Pill · high</td></tr>
+            <tr data-fg="--medium-on" data-bg="--medium" data-min="4.5"><td>Pill · medium</td></tr>
+            <tr data-fg="--low-on" data-bg="--low" data-min="4.5"><td>Pill · low</td></tr>
+            <tr data-fg="--info-on" data-bg="--info" data-min="4.5"><td>Pill · info</td></tr>
+            <tr data-fg="--good-on" data-bg="--good-soft" data-min="4.5"><td>Score · good</td></tr>
+            <tr data-fg="--fair-on" data-bg="--fair-soft" data-min="4.5"><td>Score · fair</td></tr>
+            <tr data-fg="--poor-on" data-bg="--poor-soft" data-min="4.5"><td>Score · poor</td></tr>
+            <tr data-fg="--none-on" data-bg="--none-soft" data-min="4.5"><td>Score · none</td></tr>
+            <tr data-fg="--good" data-bg="--track" data-min="3"><td>Bar · EU vs track</td></tr>
+            <tr data-fg="--fair" data-bg="--track" data-min="3"><td>Bar · outside EU vs track</td></tr>
+          </tbody>
+        </table>
       </div>
     </section>
 
     <!-- ===================== Typography ===================== -->
     <section class="ds-section" id="type">
-      <h2><span class="ds-num">02</span>Typography</h2>
-      <p class="ds-lead">Inter if the visitor has it, otherwise the system UI font; nothing is downloaded. Evidence, URLs and snippets use the mono stack. Numbers use <code>font-variant-numeric: tabular-nums</code> so counts and scores line up.</p>
+      <h2><span class="ds-num">03</span>Typography</h2>
+      <p class="ds-lead">Inter if the visitor has it, otherwise the system UI font; nothing is downloaded. Evidence, URLs and snippets use the mono stack. <code>font-variant-numeric: tabular-nums</code> is applied only where numbers are compared: <code>.total-count</code>, <code>.score</code>, <code>.destination-count</code>, <code>.nav-count</code> and the Score/High/Medium table cells. Prose stays proportional.</p>
       <div class="panel">
         <div class="ds-type-row"><code>--text-display · 2.25rem<br>700 · −0.02em</code><div class="ds-sample" style="font-size:var(--text-display);font-weight:700;letter-spacing:-.02em">Is your AI leaking?</div></div>
         <div class="ds-type-row"><code>--text-xl · 1.75rem<br>700 · .header h1, counts</code><div class="ds-sample" style="font-size:var(--text-xl);font-weight:700">AI Exposure Scan</div></div>
@@ -588,7 +583,7 @@ a:hover { color: #d4c6ff; }
         <div class="ds-type-row"><code>--text-sm · 0.875rem<br>400 · .small, nav, table</code><div class="ds-sample" style="font-size:var(--text-sm);color:var(--muted)">Intercom, OpenAI, Zendesk</div></div>
         <div class="ds-type-row"><code>--text-xs · 0.8125rem<br>600 · pills, tags</code><div class="ds-sample"><span class="pill pill-high">high</span></div></div>
         <div class="ds-type-row"><code>--text-overline · 0.75rem<br>600 · caps · +0.08em</code><div class="ds-sample" style="font-size:var(--text-overline);font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--subtle)">Evidence · Most important finding</div></div>
-        <div class="ds-type-row"><code>--font-mono · 0.875rem<br>.snippet, evidence URLs</code><div class="ds-sample" style="font-family:var(--font-mono);font-size:var(--text-sm);color:#d8cfee">const KEY = "sk-proj-••••••••3fA9";</div></div>
+        <div class="ds-type-row"><code>--font-mono · 0.875rem<br>.snippet, evidence URLs</code><div class="ds-sample" style="font-family:var(--font-mono);font-size:var(--text-sm)">const KEY = "sk-proj-••••••••3fA9";</div></div>
       </div>
       <pre class="ds-pre"><span class="tk">--font-sans</span>: <span class="tv">"Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif</span>;
 <span class="tk">--font-mono</span>: <span class="tv">ui-monospace, "JetBrains Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace</span>;</pre>
@@ -596,7 +591,7 @@ a:hover { color: #d4c6ff; }
 
     <!-- ===================== Spacing ===================== -->
     <section class="ds-section" id="spacing">
-      <h2><span class="ds-num">03</span>Spacing &amp; radius</h2>
+      <h2><span class="ds-num">04</span>Spacing &amp; radius</h2>
       <p class="ds-lead">A 4px grid. The current stylesheet already uses these values as literals; the tokens just name them.</p>
       <div class="panel ds-scroll">
         <table class="ds-table">
@@ -624,24 +619,22 @@ a:hover { color: #d4c6ff; }
       </div>
     </section>
 
+
     <!-- ===================== Elevation ===================== -->
     <section class="ds-section" id="elevation">
-      <h2><span class="ds-num">04</span>Shadows &amp; glow</h2>
-      <p class="ds-lead">On dark surfaces, depth comes from a lighter top gradient and a 1px inner highlight rather than big drop shadows. Glows are reserved for accents that need attention.</p>
+      <h2><span class="ds-num">05</span>Shadows</h2>
+      <p class="ds-lead">Edges come from the page/card contrast and the 3:1 outline, not from shadows. Shadows stay small and neutral, and there are no glows.</p>
       <div class="ds-tiles">
         <div class="ds-tile" style="box-shadow:var(--shadow-1)"><code>--shadow-1<br>panel, card</code></div>
         <div class="ds-tile" style="box-shadow:var(--shadow-2)"><code>--shadow-2<br>popover, menu</code></div>
-        <div class="ds-tile" style="box-shadow:var(--glow-accent)"><code>--glow-accent<br>primary, poor score</code></div>
-        <div class="ds-tile" style="box-shadow:var(--glow-violet)"><code>--glow-violet<br>card hover</code></div>
-        <div class="ds-tile" style="box-shadow:var(--glow-teal)"><code>--glow-teal<br>good score</code></div>
-        <div class="ds-tile" style="box-shadow:var(--ring)"><code>--ring<br>:focus-visible</code></div>
+        <div class="ds-tile" style="outline:2px solid var(--focus);outline-offset:2px"><code>--focus<br>:focus-visible outline</code></div>
       </div>
     </section>
 
     <!-- ===================== Sidebar ===================== -->
     <section class="ds-section" id="c-sidebar">
-      <h2><span class="ds-num">05</span>Sidebar nav</h2>
-      <p class="ds-lead">New. Today <code>App.jsx</code> has a top <code>.header</code> only. The sidebar gives the overview and each finding type a home, like the CY·FOCUS reference. Under 800px it turns into a horizontal scrolling bar.</p>
+      <h2><span class="ds-num">06</span>Sidebar nav</h2>
+      <p class="ds-lead">New. Today <code>App.jsx</code> has a top <code>.header</code> only. The sidebar gives the overview and each finding type a home. Under 800px it turns into a horizontal scrolling bar.</p>
       <div class="ds-demo">
         <div class="ds-stage" style="padding:0">
           <div class="ds-frame">
@@ -676,7 +669,7 @@ a:hover { color: #d4c6ff; }
               <li><b>.shell</b> grid wrapper replacing <code>.page</code> at the top level</li>
               <li><b>.sidebar</b> sticky, full height; <b>.brand</b> + <b>.brand-mark</b></li>
               <li><b>.nav</b>, <b>.nav-section</b> (overline label), <b>.nav-item</b>, <b>.nav-count</b></li>
-              <li>Active: <b>.is-active</b> or <code>aria-current="page"</code> — orange soft fill, glowing 3px left rail, orange icon</li>
+              <li>Active: <b>.is-active</b> or <code>aria-current="page"</code> — <code>--accent-soft</code> fill, 3px blue left rail, bold <code>--accent-hover</code> text</li>
             </ul>
           </div>
           <pre><code><span class="tc">// App.jsx (sketch)</span>
@@ -696,7 +689,7 @@ a:hover { color: #d4c6ff; }
 
     <!-- ===================== Buttons ===================== -->
     <section class="ds-section" id="c-buttons">
-      <h2><span class="ds-num">06</span>Buttons</h2>
+      <h2><span class="ds-num">07</span>Buttons</h2>
       <p class="ds-lead"><code>.button</code> is the secondary style used for "← Back to all sites" and Copy. <code>.button-primary</code> is new, for the one main action on a screen (e.g. "Download report", "Re-scan").</p>
       <div class="ds-demo">
         <div class="ds-stage is-row">
@@ -710,10 +703,10 @@ a:hover { color: #d4c6ff; }
           <div>
             <h5>Classes</h5>
             <ul>
-              <li><b>.button</b> — surface-2 fill, strong border, text colour. Hover lifts to surface-3.</li>
-              <li><b>.button-primary</b> — orange gradient ending in <code>--accent-strong</code> (#c94420, 4.85:1 with white), <code>--glow-accent</code>.</li>
+              <li><b>.button</b> — white fill, <code>--border-strong</code> outline, text colour. Hover fills <code>--surface-2</code>.</li>
+              <li><b>.button-primary</b> — solid <code>--accent</code> #1d4ed8 (6.70:1 with white), hover <code>--accent-hover</code>. No glow.</li>
               <li><b>.button-small</b> — inline (no margin), used by <code>CopyButton</code>.</li>
-              <li>Focus uses <code>--ring</code> via <code>:focus-visible</code>.</li>
+              <li>Focus is a 2px <code>--focus</code> outline via <code>:focus-visible</code>.</li>
             </ul>
           </div>
           <pre><code>&lt;button className=<span class="ta">"button button-primary"</span>&gt;
@@ -725,10 +718,17 @@ a:hover { color: #d4c6ff; }
 
     <!-- ===================== Pills ===================== -->
     <section class="ds-section" id="c-pills">
-      <h2><span class="ds-num">07</span>Severity pills</h2>
-      <p class="ds-lead">Text colour, translucent fill, a hairline border in the same hue and a small glowing dot so severity still reads when colour is hard to tell apart.</p>
+      <h2><span class="ds-num">08</span>Severity pills</h2>
+      <p class="ds-lead">A lightness ramp: high is a solid dark red fill with white text, medium a mid amber fill, low a pale slate fill, and info a white outline. Because the fills get lighter as urgency drops, the order still reads in greyscale or on a washed-out projector.</p>
       <div class="ds-demo">
         <div class="ds-stage is-row">
+          <span class="pill pill-high">high</span>
+          <span class="pill pill-medium">medium</span>
+          <span class="pill pill-low">low</span>
+          <span class="pill pill-info">info</span>
+        </div>
+        <div class="ds-stage is-row" style="filter:grayscale(1)">
+          <span class="ds-label">Greyscale check</span>
           <span class="pill pill-high">high</span>
           <span class="pill pill-medium">medium</span>
           <span class="pill pill-low">low</span>
@@ -739,7 +739,7 @@ a:hover { color: #d4c6ff; }
             <h5>Classes</h5>
             <ul>
               <li><b>.pill</b> + <b>.pill-{severity}</b>, severity from <code>finding.severity</code></li>
-              <li>Dot is <code>.pill::before</code>, no markup change</li>
+              <li>Low uses slate (<code>--low</code>), not violet; info is outline-only</li>
               <li>Text is capitalised by CSS; the JSON value stays lowercase</li>
             </ul>
           </div>
@@ -752,8 +752,8 @@ a:hover { color: #d4c6ff; }
 
     <!-- ===================== Method ===================== -->
     <section class="ds-section" id="c-method">
-      <h2><span class="ds-num">08</span>Method badges</h2>
-      <p class="ds-lead">"Detected" is solid: plain code found it. "Judged" is a dashed violet outline: a model or heuristic decided, so treat it as a second opinion. The dash carries the meaning without colour.</p>
+      <h2><span class="ds-num">09</span>Method badges</h2>
+      <p class="ds-lead">"Detected" is solid: plain code found it. "Judged" is a dashed grey outline: a model or heuristic decided, so treat it as a second opinion. The dash carries the meaning without colour.</p>
       <div class="ds-demo">
         <div class="ds-stage is-row">
           <span class="method method-detected" title="Found by plain code">detected</span>
@@ -765,8 +765,8 @@ a:hover { color: #d4c6ff; }
           <div>
             <h5>Classes</h5>
             <ul>
-              <li><b>.method.method-detected</b> — surface-3 fill, strong border</li>
-              <li><b>.method.method-judged</b> — transparent, 1px dashed violet, <code>cursor: help</code></li>
+              <li><b>.method.method-detected</b> — <code>--surface-2</code> fill, outline border</li>
+              <li><b>.method.method-judged</b> — transparent, 1px dashed <code>--border-strong</code>, muted text, <code>cursor: help</code></li>
               <li>Keep the existing <code>title</code> tooltips</li>
             </ul>
           </div>
@@ -779,8 +779,8 @@ a:hover { color: #d4c6ff; }
 
     <!-- ===================== Score ===================== -->
     <section class="ds-section" id="c-score">
-      <h2><span class="ds-num">09</span>Score chips</h2>
-      <p class="ds-lead">Bands come from <code>scoreBand()</code>: good ≥ 80, fair 50–79, poor &lt; 50, none when the site failed. The large size used in the site header adds a matching glow.</p>
+      <h2><span class="ds-num">10</span>Score chips</h2>
+      <p class="ds-lead">Bands come from <code>scoreBand()</code>: good ≥ 80, fair 50–79, poor &lt; 50, none when the site failed. The large size is used in the site header. No glows.</p>
       <div class="ds-demo">
         <div class="ds-stage is-row">
           <span class="ds-label">Regular</span>
@@ -801,8 +801,8 @@ a:hover { color: #d4c6ff; }
             <h5>Classes</h5>
             <ul>
               <li><b>.score</b> + <b>.score-good | -fair | -poor | -none</b></li>
-              <li><b>.score-large</b> — 1.75rem, 14px radius, band-coloured glow (none has no glow)</li>
-              <li>Good = teal, fair = amber, poor = orange-red, none = gray</li>
+              <li><b>.score-large</b> — 1.75rem, 14px radius</li>
+              <li>Good = green, fair = amber, poor = red, none = grey: soft fill, dark <code>-on</code> text, full-strength border</li>
             </ul>
           </div>
           <pre><code>&lt;Score score={s.score} /&gt;
@@ -814,8 +814,8 @@ a:hover { color: #d4c6ff; }
 
     <!-- ===================== Stat cards ===================== -->
     <section class="ds-section" id="c-cards">
-      <h2><span class="ds-num">10</span>Stat cards</h2>
-      <p class="ds-lead">One per finding type across the top of the overview. A faint hexagon outline sits in the corner (CSS only) and hover adds a violet glow.</p>
+      <h2><span class="ds-num">11</span>Stat cards</h2>
+      <p class="ds-lead">One per finding type across the top of the overview. They can't be clicked, so they have no hover state, glow or pointer cursor.</p>
       <div class="ds-demo">
         <div class="ds-stage">
           <section class="cards" aria-label="Findings by type" style="margin-bottom:0">
@@ -832,7 +832,7 @@ a:hover { color: #d4c6ff; }
             <ul>
               <li><b>.cards</b> — 5 columns, 2 under 800px, 1 under 640px</li>
               <li><b>.card.total</b>, <b>.total-count</b> (tabular nums), <b>.total-label</b></li>
-              <li>Hex motif is <code>.total::after</code> with an inline SVG data URI</li>
+              <li>No <code>:hover</code> rule: only clickable things react to the pointer</li>
             </ul>
           </div>
           <pre><code>&lt;div className=<span class="ta">"card total"</span>&gt;
@@ -845,8 +845,8 @@ a:hover { color: #d4c6ff; }
 
     <!-- ===================== Destinations ===================== -->
     <section class="ds-section" id="c-dest">
-      <h2><span class="ds-num">11</span>Destination bars</h2>
-      <p class="ds-lead">"Where the data likely goes." Outside-EU bars run orange to amber; EU bars are teal. Both glow a little so the panel reads like a live meter.</p>
+      <h2><span class="ds-num">12</span>Destination bars</h2>
+      <p class="ds-lead">"Where the data likely goes." Outside-EU bars are amber and EU bars are green. Both are flat fills at ≥ 3:1 against the track.</p>
       <div class="ds-demo">
         <div class="ds-stage">
           <section class="panel">
@@ -877,8 +877,8 @@ a:hover { color: #d4c6ff; }
             <ul>
               <li><b>.destinations</b> list; each <b>li</b> has <b>.destination-head</b>, <b>.bar</b>, vendor line</li>
               <li><b>.destination-name</b>, <b>.destination-count</b> (pushed right)</li>
-              <li><b>.tag.tag-outside</b> amber · <b>.tag.tag-eu</b> teal</li>
-              <li><b>.bar</b> track (surface-3) › <b>.bar-fill.bar-outside | .bar-eu</b>, width inline</li>
+              <li><b>.tag.tag-outside</b> amber · <b>.tag.tag-eu</b> green</li>
+              <li><b>.bar</b> track (<code>--track</code>) › <b>.bar-fill.bar-outside | .bar-eu</b>, width inline</li>
             </ul>
           </div>
           <pre><code>&lt;span className={<span class="ta">`tag ${d.eu
@@ -894,8 +894,8 @@ a:hover { color: #d4c6ff; }
 
     <!-- ===================== Sites table ===================== -->
     <section class="ds-section" id="c-table">
-      <h2><span class="ds-num">12</span>Sites table</h2>
-      <p class="ds-lead">Overline column headers, row hover on surface-3, and an orange left rail on keyboard focus. Below 640px every row becomes a stacked card using the existing <code>data-label</code> attributes.</p>
+      <h2><span class="ds-num">13</span>Sites table</h2>
+      <p class="ds-lead">Overline column headers, row hover on <code>--surface-2</code> (rows are clickable), and a 2px blue outline on keyboard focus. Only the Score, High and Medium cells use tabular nums. Below 640px every row becomes a stacked card using the existing <code>data-label</code> attributes.</p>
       <div class="ds-demo">
         <div class="ds-stage">
           <section class="panel">
@@ -917,7 +917,8 @@ a:hover { color: #d4c6ff; }
             <ul>
               <li><b>table.sites</b> inside a <b>.panel</b></li>
               <li><b>.site-name</b> (600), <b>.worst</b> (right-aligned on mobile)</li>
-              <li>Rows keep <code>tabIndex={0}</code> + Enter/Space handlers; focus shows <code>inset 3px</code> accent rail</li>
+              <li>Rows keep <code>tabIndex={0}</code> + Enter/Space handlers; focus shows a 2px <code>--focus</code> outline</li>
+              <li>Tabular nums via <code>td[data-label="Score"|"High"|"Medium"]</code>, no JSX change</li>
               <li>Errors render <code>–</code> and a <b>.muted</b> message</li>
             </ul>
           </div>
@@ -931,7 +932,7 @@ a:hover { color: #d4c6ff; }
 
     <!-- ===================== Site head ===================== -->
     <section class="ds-section" id="c-sitehead">
-      <h2><span class="ds-num">13</span>Site header</h2>
+      <h2><span class="ds-num">14</span>Site header</h2>
       <p class="ds-lead">Top of the single-site view: back button, then a panel with the domain, final URL and the large score.</p>
       <div class="ds-demo">
         <div class="ds-stage">
@@ -942,7 +943,7 @@ a:hover { color: #d4c6ff; }
           </section>
         </div>
         <div class="ds-doc">
-          <div><h5>Classes</h5><ul><li><b>.panel.site-head</b> — flex, space-between, wraps</li><li><b>.site-head h2</b> 1.5rem</li><li>Final URL is a normal <b>a</b> in <code>--link</code> violet</li></ul></div>
+          <div><h5>Classes</h5><ul><li><b>.panel.site-head</b> — flex, space-between, wraps</li><li><b>.site-head h2</b> 1.5rem</li><li>Final URL is a normal <b>a</b> in <code>--link</code> blue</li></ul></div>
           <pre><code>&lt;section className=<span class="ta">"panel site-head"</span>&gt;
   &lt;div&gt;&lt;h2&gt;{site.site}&lt;/h2&gt;&lt;a …/&gt;&lt;/div&gt;
   &lt;Score score={site.score} large /&gt;
@@ -953,8 +954,8 @@ a:hover { color: #d4c6ff; }
 
     <!-- ===================== Finding cards ===================== -->
     <section class="ds-section" id="c-finding">
-      <h2><span class="ds-num">14</span>Finding cards</h2>
-      <p class="ds-lead">Title, severity pill and method badge; then evidence on an inset mono surface; then the violet "What to tell your web person" box with a Copy button. Keys are always masked in the snippet.</p>
+      <h2><span class="ds-num">15</span>Finding cards</h2>
+      <p class="ds-lead">Title, severity pill and method badge; then evidence on an inset mono surface; then the blue-tinted "What to tell your web person" box with a Copy button. Keys are always masked in the snippet.</p>
       <div class="ds-demo">
         <div class="ds-stage">
           <section class="group">
@@ -1011,7 +1012,7 @@ a:hover { color: #d4c6ff; }
               <li><b>.group</b> › <b>h3</b> › <b>article.card.finding</b></li>
               <li><b>.finding-head</b> (h4 + <b>.badges</b>), stacks under 640px</li>
               <li><b>.evidence</b> › <b>.evidence-label</b> (overline), link/span in mono, <b>pre.snippet</b> on <code>--inset</code></li>
-              <li><b>.fix</b> — violet soft fill + 3px violet left border; <b>.fix-head</b> holds title + <code>CopyButton</code></li>
+              <li><b>.fix</b> — <code>--accent-soft</code> fill, accent outline with a 4px left edge; <b>.fix-head</b> holds title + <code>CopyButton</code></li>
               <li>The fix box is omitted when <code>f.fix</code> is empty</li>
             </ul>
           </div>
@@ -1032,15 +1033,15 @@ a:hover { color: #d4c6ff; }
 
     <!-- ===================== Banner ===================== -->
     <section class="ds-section" id="c-banner">
-      <h2><span class="ds-num">15</span>Error banner</h2>
-      <p class="ds-lead">Used when <code>findings.json</code> can't load and when a single site failed to scan. A glowing "!" is added with <code>::before</code>, so the markup stays the same.</p>
+      <h2><span class="ds-num">16</span>Banner</h2>
+      <p class="ds-lead">Used when a single site couldn't be scanned and when <code>findings.json</code> can't load. It is neutral on purpose: a failed scan is not a finding, so it gets no red and no glow. The "i" icon comes from <code>::before</code>, so the markup stays the same.</p>
       <div class="ds-demo">
         <div class="ds-stage">
           <div class="banner" role="alert">Couldn't load the scan results (findings.json returned 404).</div>
           <div class="banner" role="alert">We couldn't scan this site: Timed out after 10 s</div>
         </div>
         <div class="ds-doc">
-          <div><h5>Classes</h5><ul><li><b>.banner</b> with <code>role="alert"</code></li><li>High-soft fill, 40% accent border, light coral text (#ffb39d)</li><li>Icon is <code>.banner::before</code></li></ul></div>
+          <div><h5>Classes</h5><ul><li><b>.banner</b> with <code>role="alert"</code></li><li>White fill, outline border with a 4px <code>--border-strong</code> left edge, body text colour</li><li>Icon is <code>.banner::before</code></li></ul></div>
           <pre><code>&lt;div className=<span class="ta">"banner"</span> role=<span class="ta">"alert"</span>&gt;
   We couldn't scan this site: {site.error}
 &lt;/div&gt;</code></pre>
@@ -1048,18 +1049,20 @@ a:hover { color: #d4c6ff; }
       </div>
     </section>
 
+
     <!-- ===================== Migration ===================== -->
     <section class="ds-section" id="migration">
-      <h2><span class="ds-num">16</span>Migration notes</h2>
+      <h2><span class="ds-num">17</span>Migration notes</h2>
       <p class="ds-lead">What it would take to apply this to the React app. Nothing in the app was changed for this proposal.</p>
       <div class="panel ds-scroll">
         <table class="ds-table">
           <thead><tr><th>Change</th><th>Where</th><th>Effort</th></tr></thead>
           <tbody>
             <tr><td>Replace tokens and component rules</td><td><code>dashboard/src/styles.css</code> → contents of <a href="#stylesheet">#app-css</a></td><td>Swap only, same class names</td></tr>
+            <tr><td>Severity ramp, neutral banner, no stat-card hover</td><td>CSS only</td><td>None</td></tr>
+            <tr><td>Tabular nums on number cells only</td><td><code>td[data-label="Score|High|Medium"]</code> selectors on existing attributes</td><td>None</td></tr>
             <tr><td>Primary button</td><td>Add <code>button-primary</code> where a main action exists</td><td>Optional</td></tr>
-            <tr><td>Sidebar nav</td><td>Wrap the app in <code>.shell</code>, add <code>aside.sidebar</code>; move <code>.header</code> into the main column</td><td>Small JSX change</td></tr>
-            <tr><td>Pill dot, hex on cards, banner icon</td><td>Pseudo-elements in CSS</td><td>None</td></tr>
+            <tr><td>Sidebar nav</td><td>Wrap the app in <code>.shell</code>, add <code>aside.sidebar</code>; move <code>.header</code> into the main column</td><td>Small JSX change, optional</td></tr>
             <tr><td>Mobile table cards</td><td>Existing <code>data-label</code> attributes</td><td>None</td></tr>
           </tbody>
         </table>
@@ -1068,7 +1071,7 @@ a:hover { color: #d4c6ff; }
 
     <!-- ===================== Stylesheet ===================== -->
     <section class="ds-section" id="stylesheet">
-      <h2><span class="ds-num">17</span>Proposed stylesheet</h2>
+      <h2><span class="ds-num">18</span>Proposed stylesheet</h2>
       <p class="ds-lead">This is the live <code>&lt;style id="app-css"&gt;</code> block that styles every example on this page, so what you see is what you get.</p>
       <div class="ds-css-wrap">
         <button type="button" class="button button-small" id="ds-copy-css">Copy CSS</button>
@@ -1076,10 +1079,9 @@ a:hover { color: #d4c6ff; }
       </div>
     </section>
 
-    <footer class="ds-footer">AI Exposure Scan · design system proposal · self-contained, no external requests. Open this file directly in a browser.</footer>
+    <footer class="ds-footer">AI Exposure Scan · design system proposal v0.2 · self-contained, no external requests. Open this file directly in a browser.</footer>
   </main>
 </div>
-
 <script>
 (function () {
   var root = getComputedStyle(document.documentElement);
@@ -1100,19 +1102,30 @@ a:hover { color: #d4c6ff; }
     return (hi + 0.05) / (lo + 0.05);
   }
   function rating(r) {
-    var cls = r >= 4.5 ? "ok" : r >= 3 ? "warn" : "bad";
-    var txt = r >= 7 ? "AAA" : r >= 4.5 ? "AA" : r >= 3 ? "AA large" : "fail";
-    return '<span class="' + cls + '">' + r.toFixed(2) + ":1 " + txt + "</span>";
+    var txt = r >= 7 ? "AAA" : r >= 4.5 ? "AA" : r >= 3 ? "3:1 UI" : "below 3:1";
+    return '<span class="' + (r >= 4.5 ? "ok" : r >= 3 ? "" : "bad") + '">' + r.toFixed(2) + ":1 " + txt + "</span>";
   }
+  function val(v) { return v.indexOf("--") === 0 ? tok(v) : v; }
+
+  document.querySelectorAll("#ds-contrast tbody tr").forEach(function (tr) {
+    var f = tr.dataset.fg, b = tr.dataset.bg, min = parseFloat(tr.dataset.min);
+    var fv = val(f), bv = val(b), r = contrast(fv, bv), text = min >= 4.5;
+    var sample = text
+      ? '<span class="ds-pair" style="background:' + bv + ";color:" + fv + ';border:1px solid var(--divider)">Aa 12</span>'
+      : '<span class="ds-pair" style="background:' + bv + ";border:3px solid " + fv + '"></span>';
+    tr.insertAdjacentHTML("beforeend",
+      "<td>" + sample + "</td><td><code>" + f + "</code> on <code>" + b + "</code></td>" +
+      '<td class="ds-n">' + r.toFixed(2) + ":1</td>" +
+      '<td class="ds-cr"><span class="' + (r >= min ? "ok" : "bad") + '">' + (r >= min ? "pass" : "fail") + " ≥ " + min + "</span></td>");
+  });
 
   document.querySelectorAll(".ds-swatch").forEach(function (el) {
     var t = el.dataset.token, val = tok(t), surface = tok("--surface");
     var extra = "";
-    if (el.hasAttribute("data-contrast") && val[0] === "#") extra = '<span class="ds-cr">on surface ' + rating(contrast(val, surface)) + "</span>";
+    if (el.hasAttribute("data-contrast") && val[0] === "#") extra = '<span class="ds-cr">on card ' + rating(contrast(val, surface)) + "</span>";
     if (el.hasAttribute("data-contrast-white") && val[0] === "#") extra = '<span class="ds-cr">white text ' + rating(contrast(val, "#ffffff")) + "</span>";
-    var glow = el.dataset.glow ? ";box-shadow:var(" + el.dataset.glow + ")" : "";
     el.innerHTML =
-      '<div class="ds-chip" style="background:var(' + t + ")" + glow + '"></div>' +
+      '<div class="ds-chip" style="background:var(' + t + ')"></div>' +
       '<div class="ds-meta"><b>' + el.dataset.name + "</b><code>" + t + "</code><code>" + val + "</code>" + extra + "</div>";
   });
 
