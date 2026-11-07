@@ -25,6 +25,8 @@ HTML_CAP = 2 * 1024 * 1024
 SCRIPT_CAP = 2 * 1024 * 1024
 TEXT_CAP = 200 * 1024
 
+SERVER_HEADERS = ["server", "via", "cf-ray", "x-vercel-id", "x-amz-cf-id", "x-served-by", "x-cache"]
+
 PRIVACY_WORDS = ["privacy", "privacidad", "datenschutz", "confidentialit"]
 
 FIND_PRIVACY_LINK_JS = """
@@ -141,6 +143,8 @@ def empty_raw(url, label=None):
         "robots_txt": None,
         "llms_txt": None,
         "privacy_policy": None,
+        "server_ip": None,
+        "server_headers": {},
     }
     if label:
         raw["label"] = label
@@ -215,6 +219,8 @@ def fetch_site(browser, url, label=None):
         try:
             response = page.goto(url, wait_until="domcontentloaded", timeout=GOTO_TIMEOUT_MS)
             raw["status"] = response.status if response else None
+            raw["server_ip"] = _server_ip(response)
+            raw["server_headers"] = _server_headers(response)
         except PlaywrightError as exc:
             raw["error"] = _short_error(exc)
         try:
@@ -258,6 +264,31 @@ def fetch_site(browser, url, label=None):
     finally:
         context.close()
     return raw
+
+
+def _server_ip(response):
+    """IP of the server that answered the main document, from the load already made. None if unknown."""
+    try:
+        addr = response.server_addr() if response else None
+    except Exception:
+        return None
+    ip = (addr or {}).get("ipAddress")
+    return ip.strip("[]") if ip else None
+
+
+def _server_headers(response):
+    """Lowercase-keyed subset of the main response headers that hint at the host or CDN."""
+    if not response:
+        return {}
+    try:
+        headers = response.all_headers()
+    except Exception:
+        try:
+            headers = response.headers
+        except Exception:
+            return {}
+    lower = {k.lower(): v for k, v in (headers or {}).items()}
+    return {k: lower[k] for k in SERVER_HEADERS if k in lower}
 
 
 def _collect_scripts(page, script_responses):

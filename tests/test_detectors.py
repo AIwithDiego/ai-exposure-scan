@@ -310,3 +310,121 @@ def test_vendor_match_ignores_query_string():
                requests=[{"url": "https://cdn.example/p?ref=code.tidio.co", "domain": "cdn.example",
                           "method": "GET", "resource_type": "xhr"}])
     assert "Tidio" not in {b["meta"]["vendor"] for b in detectors.chatbots(raw)}
+
+
+# ---------- hosting and outside services ----------
+
+GEO_SAMPLE = Path(__file__).resolve().parent / "geoip-sample.csv"
+
+
+def services_raw(*hosts, site="bellas.example"):
+    return {
+        "site": site, "url": f"https://{site}/", "final_url": f"https://www.{site}/", "error": None,
+        "scripts": [], "requests": [{"url": f"https://{h}/x.js", "domain": h, "method": "GET",
+                                     "resource_type": "script"} for h in hosts],
+    }
+
+
+def test_registrable_domain():
+    assert detectors.registrable_domain("www.shop.example.co.uk") == "example.co.uk"
+    assert detectors.registrable_domain("js.hs-scripts.com") == "hs-scripts.com"
+    assert detectors.registrable_domain("www.zexel.io") == "zexel.io"
+    assert detectors.registrable_domain("localhost") == "localhost"
+    assert detectors.registrable_domain("127.0.0.1") == "127.0.0.1"
+
+
+def test_services_one_aggregated_finding():
+    raw = services_raw("js.hs-scripts.com", "js.hs-analytics.net", "www.google-analytics.com",
+                       "plausible.io", "www.bellas.example", "cdn.bellas.example", "static.unknown-cdn.example")
+    raw["scripts"] = [{"src": "https://www.googletagmanager.com/gtag/js?id=G-1", "inline": False, "content": None}]
+    found = detectors.services(raw, [])
+    assert len(found) == 1
+    [f] = found
+    assert f["id"] == "bellas.example:data_transfer:services"
+    assert f["type"] == "data_transfer" and f["method"] == "detected"
+    names = [s["name"] for s in f["meta"]["services"]]
+    assert names == ["HubSpot", "Google Analytics", "Plausible", "Google Tag Manager"]
+    assert f["meta"]["kind"] == "services"
+    assert f["meta"]["outside_eu_count"] == 3
+    assert f["meta"]["unknown_domains"] == ["unknown-cdn.example"]
+    assert f["severity"] == "low"
+    assert f["title"] == "Your site sends visitor data to 4 outside services, 3 likely outside the EU"
+    assert "bellas.example" not in f["evidence"]["snippet"].replace("unknown-cdn.example", "")
+    assert len(f["evidence"]["snippet"]) <= detectors.SNIPPET_MAX
+
+
+def test_services_eu_only_is_info():
+    [f] = detectors.services(services_raw("plausible.io"), [])
+    assert f["severity"] == "info" and f["meta"]["outside_eu_count"] == 0
+
+
+def test_own_domain_requests_ignored():
+    [f] = detectors.services(services_raw("www.bellas.example", "img.bellas.example"), [])
+    assert f["severity"] == "info" and f["meta"]["services"] == [] and f["meta"]["unknown_domains"] == []
+    assert f["title"] == "Your homepage doesn't contact any outside services"
+
+
+def test_services_skip_reported_chat_vendors():
+    raw = services_raw("widget.intercom.io", "nexus-websocket-a.intercom.io", "js.hs-scripts.com")
+    bots = detectors.chatbots(raw)
+    assert [b["meta"]["vendor"] for b in bots] == ["Intercom"]
+    [f] = detectors.services(raw, bots)
+    assert [s["name"] for s in f["meta"]["services"]] == ["HubSpot"]
+    assert f["meta"]["unknown_domains"] == []
+
+
+def test_detect_wires_services_once():
+    raw = {**load_raw(), "requests": load_raw()["requests"] + services_raw("fonts.googleapis.com")["requests"]}
+    found = [f for f in detectors.detect(raw) if f["id"].endswith(":data_transfer:services")]
+    assert len(found) == 1
+
+
+def hosting_raw(ip, headers=None):
+    return {"site": "bellas.example", "url": "https://bellas.example/", "final_url": "https://bellas.example/",
+            "error": None, "server_ip": ip, "server_headers": headers or {}}
+
+
+def test_hosting_public_ip(monkeypatch):
+    monkeypatch.setenv("GEOIP_CSV", str(GEO_SAMPLE))
+    [f] = detectors.hosting(hosting_raw("85.214.132.117", {"server": "Apache"}))
+    assert f["id"] == "bellas.example:data_transfer:hosting"
+    assert f["meta"] == {"kind": "hosting", "ip_country": "DE", "cdn": None}
+    assert f["severity"] == "info" and f["method"] == "detected"
+    assert f["title"] == "Your site is hosted in Germany"
+    [us] = detectors.hosting(hosting_raw("8.8.8.8"))
+    assert us["severity"] == "low" and us["meta"]["ip_country"] == "US"
+
+
+def test_hosting_private_or_missing_ip_gives_nothing(monkeypatch):
+    monkeypatch.setenv("GEOIP_CSV", str(GEO_SAMPLE))
+    assert detectors.hosting(hosting_raw("127.0.0.1")) == []
+    assert detectors.hosting(hosting_raw("192.168.0.4")) == []
+    assert detectors.hosting(hosting_raw(None)) == []
+    assert detectors.hosting({"site": "x", "url": "https://x/", "error": None}) == []
+
+
+def test_hosting_cdn_from_cf_ray_is_judged(monkeypatch):
+    monkeypatch.setenv("GEOIP_CSV", str(GEO_SAMPLE))
+    [f] = detectors.hosting(hosting_raw("104.21.32.1", {"cf-ray": "8e1234abcd-DUB"}))
+    assert f["method"] == "judged"
+    assert f["meta"] == {"kind": "hosting", "ip_country": "US", "cdn": "Cloudflare"}
+    assert f["title"] == "Your site is served through Cloudflare from the US"
+    assert "real server" in f["fix"] or "differ" in f["fix"]
+
+
+def test_cdn_from_headers():
+    assert detectors._cdn({"server": "cloudflare"}) == "Cloudflare"
+    assert detectors._cdn({"x-vercel-id": "dub1::abc"}) == "Vercel"
+    assert detectors._cdn({"x-amz-cf-id": "abc"}) == "CloudFront"
+    assert detectors._cdn({"x-served-by": "cache-dub4320-DUB"}) == "Fastly"
+    assert detectors._cdn({"server": "nginx"}) is None
+
+
+def test_rerun_drops_stale_judged_hosting(out_dir):
+    first = run_detect(out_dir)
+    stale = {"id": "localhost:8765:data_transfer:hosting", "type": "data_transfer", "title": "old", "severity": "low",
+             "method": "judged", "evidence": {"where": "x", "snippet": "x"}, "fix": "x"}
+    first["sites"][0]["findings"].append(stale)
+    (out_dir / "findings.json").write_text(json.dumps(first), encoding="utf-8")
+    again = run_detect(out_dir)
+    assert stale["id"] not in [f["id"] for f in again["sites"][0]["findings"]]

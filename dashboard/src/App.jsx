@@ -13,8 +13,18 @@ const SEVERITY_ORDER = { high: 0, medium: 1, low: 2, info: 3 };
 const COUNTRIES = {
   US: "United States", CA: "Canada", GB: "United Kingdom", FR: "France", DE: "Germany",
   PL: "Poland", ES: "Spain", IE: "Ireland", NL: "Netherlands", IT: "Italy", SE: "Sweden",
-  CN: "China", IL: "Israel", IN: "India", AU: "Australia",
+  CN: "China", IL: "Israel", IN: "India", AU: "Australia", AT: "Austria", BE: "Belgium",
+  BG: "Bulgaria", HR: "Croatia", CY: "Cyprus", CZ: "Czechia", DK: "Denmark", EE: "Estonia",
+  FI: "Finland", GR: "Greece", HU: "Hungary", LV: "Latvia", LT: "Lithuania", LU: "Luxembourg",
+  MT: "Malta", PT: "Portugal", RO: "Romania", SK: "Slovakia", SI: "Slovenia", CH: "Switzerland",
+  NO: "Norway", IS: "Iceland", NZ: "New Zealand", SG: "Singapore", JP: "Japan", HK: "Hong Kong",
+  BR: "Brazil", ZA: "South Africa", KR: "South Korea",
 };
+
+const EU_COUNTRIES = new Set([
+  "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE", "GR", "HU", "IE",
+  "IT", "LV", "LT", "LU", "MT", "NL", "PL", "PT", "RO", "SK", "SI", "ES", "SE",
+]);
 
 function countryName(code) {
   return COUNTRIES[code] || code || "Unknown";
@@ -58,31 +68,91 @@ function Score({ score, large }) {
   );
 }
 
+function addDestination(byCountry, site, country, eu, name) {
+  const row = (byCountry[country] ||= { country, eu: eu === true, sites: new Set(), vendors: new Set() });
+  row.sites.add(site.site);
+  if (name) row.vendors.add(name);
+}
+
+function sortDestinations(byCountry) {
+  return Object.values(byCountry).sort((a, b) => b.sites.size - a.sites.size || b.vendors.size - a.vendors.size);
+}
+
 function dataDestinations(sites) {
   const byCountry = {};
   for (const site of sites) {
     for (const f of site.findings || []) {
       const meta = f.meta || {};
+      if (meta.kind) continue;
       const counts = f.type === "data_transfer" || (f.type === "chatbot" && meta.eu === true);
       if (!counts || !meta.country) continue;
-      const row = (byCountry[meta.country] ||= {
-        country: meta.country,
-        eu: meta.eu === true,
-        sites: new Set(),
-        vendors: new Set(),
-      });
-      row.sites.add(site.site);
-      if (meta.vendor) row.vendors.add(meta.vendor);
+      addDestination(byCountry, site, meta.country, meta.eu, meta.vendor);
     }
   }
-  return Object.values(byCountry).sort((a, b) => b.sites.size - a.sites.size);
+  return sortDestinations(byCountry);
+}
+
+function serviceDestinations(sites) {
+  const byCountry = {};
+  for (const site of sites) {
+    const f = servicesFinding(site);
+    for (const svc of f?.meta?.services || []) {
+      if (svc.country) addDestination(byCountry, site, svc.country, svc.eu, svc.name);
+    }
+  }
+  return sortDestinations(byCountry);
+}
+
+function metaFinding(site, kind) {
+  return (site.findings || []).find((f) => f.type === "data_transfer" && f.meta?.kind === kind);
+}
+
+function servicesFinding(site) {
+  return metaFinding(site, "services");
+}
+
+function hostingLine(site) {
+  const meta = metaFinding(site, "hosting")?.meta;
+  if (!meta?.ip_country) return null;
+  const code = meta.ip_country;
+  const eu = EU_COUNTRIES.has(code);
+  if (meta.cdn) return { text: `Served through ${meta.cdn} (${code}) · real server may differ`, eu };
+  return { text: `Hosted in ${countryName(code)} · ${eu ? "inside the EU" : "likely outside the EU"}`, eu };
+}
+
+function DestinationList({ rows, quiet }) {
+  const maxSites = Math.max(1, ...rows.map((d) => d.sites.size));
+  return (
+    <ul className={`destinations${quiet ? " destinations-quiet" : ""}`}>
+      {rows.map((d) => (
+        <li key={d.country}>
+          <div className="destination-head">
+            <span className="destination-name">{countryName(d.country)}</span>
+            <span className={`tag ${d.eu ? "tag-eu" : "tag-outside"}`}>
+              {d.eu ? "Inside the EU" : "Likely outside the EU"}
+            </span>
+            <span className="muted destination-count">
+              {d.sites.size} {d.sites.size === 1 ? "site" : "sites"}
+            </span>
+          </div>
+          <div className="bar">
+            <div
+              className={`bar-fill ${d.eu ? "bar-eu" : "bar-outside"}`}
+              style={{ width: `${(d.sites.size / maxSites) * 100}%` }}
+            />
+          </div>
+          <div className="muted small">{[...d.vendors].join(", ")}</div>
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 function Overview({ data, onSelect }) {
   const sites = data.sites || [];
   const all = sites.flatMap((s) => s.findings || []);
   const destinations = dataDestinations(sites);
-  const maxSites = Math.max(1, ...destinations.map((d) => d.sites.size));
+  const services = serviceDestinations(sites);
 
   return (
     <>
@@ -103,28 +173,16 @@ function Overview({ data, onSelect }) {
         {destinations.length === 0 ? (
           <p className="muted">No chat or AI vendors found.</p>
         ) : (
-          <ul className="destinations">
-            {destinations.map((d) => (
-              <li key={d.country}>
-                <div className="destination-head">
-                  <span className="destination-name">{countryName(d.country)}</span>
-                  <span className={`tag ${d.eu ? "tag-eu" : "tag-outside"}`}>
-                    {d.eu ? "Inside the EU" : "Likely outside the EU"}
-                  </span>
-                  <span className="muted destination-count">
-                    {d.sites.size} {d.sites.size === 1 ? "site" : "sites"}
-                  </span>
-                </div>
-                <div className="bar">
-                  <div
-                    className={`bar-fill ${d.eu ? "bar-eu" : "bar-outside"}`}
-                    style={{ width: `${(d.sites.size / maxSites) * 100}%` }}
-                  />
-                </div>
-                <div className="muted small">{[...d.vendors].join(", ")}</div>
-              </li>
-            ))}
-          </ul>
+          <DestinationList rows={destinations} />
+        )}
+        {services.length > 0 && (
+          <div className="destinations-group">
+            <h3>Other services</h3>
+            <p className="muted small">
+              Analytics, ads, fonts, videos and other tools the homepages load, by where each company is based.
+            </p>
+            <DestinationList rows={services} quiet />
+          </div>
         )}
       </section>
 
@@ -221,6 +279,15 @@ function howWeKnow(f, site) {
       ? "We asked for the site's llms.txt file and there wasn't one."
       : "Found in the site's llms.txt file, a short guide written for AI assistants.";
   }
+  if (f.type === "data_transfer" && f.meta?.kind === "hosting") {
+    const base = "We noted the address of the server that answered when the homepage loaded and looked up its country in the DB-IP database.";
+    return f.meta.cdn
+      ? `${base} The reply came through ${f.meta.cdn}, which answers from a city near the visitor, so the real server can be elsewhere.`
+      : base;
+  }
+  if (f.type === "data_transfer" && f.meta?.kind === "services") {
+    return "We listed the other websites the homepage contacted while loading and matched them to our list of common services. Where each company is based comes from that list.";
+  }
   if (f.type === "data_transfer") {
     const vendor = f.meta?.vendor || "this vendor";
     const seen = /^[A-Z]+ https?:\/\//.test(snippet)
@@ -247,6 +314,36 @@ function howWeKnow(f, site) {
   return null;
 }
 
+const CATEGORIES = {
+  analytics: "Analytics", ads: "Ads", crm: "CRM", social: "Social", video: "Video", fonts: "Fonts",
+  cdn: "CDN", consent: "Consent", payments: "Payments", maps: "Maps",
+};
+
+function ServicesList({ meta }) {
+  const services = meta.services || [];
+  const unknown = meta.unknown_domains || [];
+  if (!services.length && !unknown.length) return null;
+  return (
+    <div className="services">
+      {services.length > 0 && (
+        <ul className="services-list">
+          {services.map((s) => (
+            <li key={s.name}>
+              <span className="service-name">{s.name}</span>
+              <span className="muted service-category">{CATEGORIES[s.category] || s.category}</span>
+              <span className="muted service-country">{countryName(s.country)}</span>
+              <span className={`tag ${s.eu ? "tag-eu" : "tag-outside"}`}>{s.eu ? "EU" : "Likely outside the EU"}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {unknown.length > 0 && (
+        <p className="muted small services-unknown">Also contacted: {unknown.join(", ")}</p>
+      )}
+    </div>
+  );
+}
+
 function FindingCard({ f, site }) {
   const how = howWeKnow(f, site);
   const where = f.evidence?.where || "";
@@ -266,6 +363,7 @@ function FindingCard({ f, site }) {
           </span>
         </div>
       </div>
+      {f.meta?.kind === "services" && <ServicesList meta={f.meta} />}
       <div className="evidence">
         <div className="evidence-label">Evidence</div>
         {isLink ? (
@@ -291,12 +389,16 @@ function FindingCard({ f, site }) {
 
 function SiteView({ site, onBack }) {
   const findings = site.findings || [];
+  const hosted = hostingLine(site);
   return (
     <>
       <button type="button" className="button" onClick={onBack}>← Back to all sites</button>
       <section className="panel site-head">
         <div>
           <h2>{site.label || site.site}</h2>
+          {hosted && (
+            <p className={`site-hosting ${hosted.eu ? "hosting-eu" : "hosting-outside"}`}>{hosted.text}</p>
+          )}
           {site.final_url && (
             <a href={site.final_url} target="_blank" rel="noreferrer noopener">{site.final_url}</a>
           )}
@@ -456,6 +558,13 @@ export default function App() {
         {!data && !loadError && <p className="muted">Loading…</p>}
         {data && (site ? <SiteView site={site} onBack={() => select(null)} /> : <Overview data={data} onSelect={select} />)}
       </main>
+      <footer className="footer muted small">
+        IP geolocation by{" "}
+        <a href="https://db-ip.com" target="_blank" rel="noreferrer noopener">DB-IP</a>
+        {" "}(
+        <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer noopener">CC BY 4.0</a>
+        ).
+      </footer>
     </div>
   );
 }

@@ -48,9 +48,11 @@ def raw(fixture_url, tmp_path_factory):
 def test_matches_contract_shape(raw, fixture_url):
     expected = {
         "site", "url", "final_url", "fetched_at", "status", "error", "html", "page_text",
-        "scripts", "requests", "robots_txt", "llms_txt", "privacy_policy",
+        "scripts", "requests", "robots_txt", "llms_txt", "privacy_policy", "server_ip", "server_headers",
     }
     assert set(raw) == expected
+    assert raw["server_ip"] == "127.0.0.1"
+    assert raw["server_headers"]["server"].startswith("SimpleHTTP")
     assert raw["url"] == fixture_url
     assert raw["status"] == 200
     assert raw["error"] is None

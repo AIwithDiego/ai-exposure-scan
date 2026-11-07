@@ -13,7 +13,7 @@ Built at the Cognition x Give(a)Go build day, Dublin, 7 Nov 2026.
 | Type | What we look for |
 |---|---|
 | `chatbot` | AI chat widgets on the site (Intercom, Tidio, Voiceflow, Botpress, Chatbase, GPT embeds...) and who the vendor is |
-| `data_transfer` | Where that data likely goes: vendor country, inside or outside the EU |
+| `data_transfer` | Where that data likely goes: vendor country, inside or outside the EU. Also which country the site is hosted in (from the server address of the one page load) and which other outside services (analytics, ads, fonts, consent, payments...) the page contacts |
 | `key_leak` | AI API keys sitting in public JavaScript (masked, never tested) |
 | `disclosure` | Does the site tell people they are talking to AI (EU AI Act Art. 50)? Does the privacy policy name its AI providers? |
 | `agent_ready` | `llms.txt`, AI crawler rules in `robots.txt`, MCP endpoints the site names |
@@ -64,7 +64,9 @@ data/
   key-patterns.json     AI key regexes (masking rules included)
   ai-crawlers.json      AI crawler user agents for robots.txt checks
   fake-findings.json    fake output so the dashboard can start at minute one
+  services.json         other third-party services (analytics, ads, fonts...) + country + EU flag
   sites.txt             the demo site list
+  geoip/                DB-IP country database, downloaded by scripts/get-geoip.sh (git-ignored)
 fixtures/
   cafe-demo/            a fake café website with known findings, for a demo that never fails
 ```
@@ -90,6 +92,8 @@ It reads `dashboard/public/findings.json`. That file is git-ignored so real scan
 
 MIT licence.
 
+IP geolocation by [DB-IP](https://db-ip.com), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+
 ## Run
 
 Python 3.11+ and Node 18+. From a fresh clone:
@@ -98,8 +102,11 @@ Python 3.11+ and Node 18+. From a fresh clone:
 pip install -r requirements.txt
 playwright install chromium
 (cd dashboard && npm install)
+./scripts/get-geoip.sh    # once: IP-to-country database for the hosting check
 ./scripts/demo.sh
 ```
+
+`scripts/get-geoip.sh` downloads this month's DB-IP "IP to Country Lite" file (`dbip-country-lite-YYYY-MM.csv.gz`, about 5 MB) into `data/geoip/`. Lookups are offline; without the file the scan still runs and just skips the hosting country. `GEOIP_CSV=path/to/file.csv(.gz)` points at another file.
 
 `scripts/demo.sh` starts the fixture on port 8765, runs `python -m scan all --sites data/sites.txt` (fetch, detect, policy, rescore, check against `docs/contract.md`, copy `out/findings.json` to `dashboard/public/findings.json`), then starts the dashboard at http://localhost:5173. The fixture server stops when you exit. `SITES=path/to/list.txt ./scripts/demo.sh` scans another list.
 
