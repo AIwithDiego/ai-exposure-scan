@@ -245,16 +245,16 @@ def _crawler_rules(raw):
     groups = parse_robots(robots)
     blocked, allowed, not_mentioned, used = [], [], [], []
     for c in CRAWLERS:
-        idx = next((i for i, g in enumerate(groups) if any(a.lower() == c["agent"].lower() for a in g[0])), None)
-        if idx is None:
+        idxs = [i for i, g in enumerate(groups) if any(a.lower() == c["agent"].lower() for a in g[0])]
+        if not idxs:
             not_mentioned.append(c["agent"])
             continue
-        if ("disallow", "/") in groups[idx][1]:
+        rules = [r for i in idxs for r in groups[i][1]]
+        if ("disallow", "/") in rules:
             blocked.append(c["agent"])
         else:
             allowed.append(c["agent"])
-        if idx not in used:
-            used.append(idx)
+        used.extend(i for i in idxs if i not in used)
     lines = [ln for i in sorted(used) for ln in groups[i][2]]
     meta = {"blocked": blocked, "allowed": allowed, "not_mentioned": not_mentioned}
     if not blocked and not allowed:

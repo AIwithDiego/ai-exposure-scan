@@ -219,3 +219,14 @@ def test_keys_in_urls_are_masked():
     raw.update(llms_txt=f"Our MCP server: https://shop.example/mcp?token={key}", html="", page_text="")
     out = json.dumps(detectors.detect(raw), ensure_ascii=False)
     assert key not in out and detectors.mask_key(key) in out
+
+
+def _crawler_meta(robots):
+    raw = load_raw()
+    raw["robots_txt"] = robots
+    return next(f for f in detectors.agent_ready(raw) if f["id"].endswith("crawler-rules"))["meta"]
+
+
+def test_crawler_rules_combine_groups():
+    meta = _crawler_meta("User-agent: GPTBot\nAllow: /menu\n\nUser-agent: *\nAllow: /\n\nUser-agent: GPTBot\nDisallow: /\n")
+    assert "GPTBot" in meta["blocked"] and "GPTBot" not in meta["allowed"]
