@@ -1,6 +1,6 @@
 """Detectors: plain-code checks over out/raw/*.json. No model, no network.
 
-Every finding uses method "detected". Keys are masked before they leave key_leaks().
+Every finding uses method "detected". Keys are masked in every string a finding carries.
 """
 import hashlib
 import json
@@ -87,11 +87,11 @@ def finding(raw, type_, slug, title, severity, where, snippet, fix, meta=None):
         "title": title,
         "severity": severity,
         "method": "detected",
-        "evidence": {"where": where, "snippet": clip(mask_all_keys(snippet or ""))},
+        "evidence": {"where": mask_all_keys(where), "snippet": clip(mask_all_keys(snippet or ""))},
         "fix": fix,
     }
     if meta:
-        f["meta"] = meta
+        f["meta"] = {k: mask_all_keys(v) if isinstance(v, str) else v for k, v in meta.items()}
     return f
 
 

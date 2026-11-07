@@ -196,3 +196,12 @@ def test_score_and_merge():
 def test_detect_is_stable():
     raw = load_raw()
     assert detectors.detect(copy.deepcopy(raw)) == detectors.detect(copy.deepcopy(raw))
+
+
+def test_keys_in_urls_are_masked():
+    key = fixture_key()
+    raw = load_raw()
+    raw["scripts"].append({"src": f"https://widget.intercom.io/widget/x?k={key}", "content": ""})
+    raw.update(llms_txt=f"Our MCP server: https://shop.example/mcp?token={key}", html="", page_text="")
+    out = json.dumps(detectors.detect(raw), ensure_ascii=False)
+    assert key not in out and detectors.mask_key(key) in out
