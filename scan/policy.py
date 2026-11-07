@@ -218,7 +218,7 @@ def vendor_named(raw, vendor, policy_text, ask):
                                   f"as a service provider or data processor?",
                              capped, ["yes", "no"]), capped, "yes")
     quote = sentence_with(policy_text, name_pattern(ALIASES.get(vendor, [vendor])))
-    return _pick(reply, quote)
+    return _pick(reply, quote, capped)
 
 
 def policy_mentions_ai(policy_text, ask):
@@ -228,13 +228,14 @@ def policy_mentions_ai(policy_text, ask):
                                   "intelligence, chatbots, virtual assistants or automated processing?",
                              capped, ["yes", "no"]), capped, "yes")
     quote = sentence_with(policy_text, AI_RE)
-    return _pick(reply, quote)
+    return _pick(reply, quote, capped)
 
 
-def _pick(reply, keyword_quote):
-    """Model answer, unless it says "no" while the keyword search of the full text found a match
-    (the model only sees the first POLICY_MAX chars). Returns (yes, quote, engine)."""
-    if reply and (reply[0] == "yes" or keyword_quote is None):
+def _pick(reply, keyword_quote, capped):
+    """Model answer, unless it says "no" while the keyword search found a match past the first
+    POLICY_MAX chars, which the model never saw. Returns (yes, quote, engine)."""
+    unseen = keyword_quote is not None and not quote_in(keyword_quote, capped)
+    if reply and (reply[0] == "yes" or not unseen):
         return reply[0] == "yes", reply[1], "model"
     return keyword_quote is not None, keyword_quote or "", "keywords"
 

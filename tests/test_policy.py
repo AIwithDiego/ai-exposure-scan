@@ -180,3 +180,10 @@ def test_vendor_named_after_model_cap_is_not_missing():
         found = {f["id"] for f in policy.judge(raw, [chatbot("Tidio")], engine)}
         assert f"{SITE}:disclosure:policy-tidio" not in found
     assert prompts and all(len(p) < policy.POLICY_MAX + 1000 for p in prompts)
+
+
+def test_model_no_is_kept_when_it_saw_the_matching_sentence():
+    raw = load_raw()
+    raw["privacy_policy"]["text"] += "\n\nWe do not use Tidio."
+    found = {f["id"]: f for f in policy.judge(raw, [chatbot("Tidio")], lambda p: '{"answer": "no", "quote": ""}')}
+    assert found[f"{SITE}:disclosure:policy-tidio"]["meta"]["engine"] == "model"
