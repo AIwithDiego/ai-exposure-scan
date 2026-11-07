@@ -9,9 +9,9 @@
     "prebuild": "npm run data:seed",
     "build": "vite build",
     "preview": "vite preview",
-    "data": "cp ../out/findings.json public/findings.json",
-    "data:fake": "cp ../data/fake-findings.json public/findings.json",
-    "data:seed": "node -e \"const fs=require('fs');if(!fs.existsSync('public/findings.json'))fs.copyFileSync('../data/fake-findings.json','public/findings.json')\""
+    "data": "mkdir -p public && cp ../out/findings.json public/findings.json",
+    "data:fake": "mkdir -p public && cp ../data/fake-findings.json public/findings.json",
+    "data:seed": "node -e \"const fs=require('fs');fs.mkdirSync('public',{recursive:true});if(!fs.existsSync('public/findings.json'))fs.copyFileSync('../data/fake-findings.json','public/findings.json')\""
   },
   "dependencies": {
     "react": "^18.3.1",
