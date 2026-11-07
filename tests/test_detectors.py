@@ -168,6 +168,20 @@ def test_failed_site_has_null_score(out_dir):
     assert down["score"] is None and down["findings"] == []
 
 
+def test_failed_rescan_drops_old_judged_findings(out_dir):
+    data = run_detect(out_dir)
+    data["sites"][0]["findings"].append({
+        "id": "localhost:8765:disclosure:x", "type": "disclosure", "title": "Old", "severity": "medium",
+        "method": "judged", "evidence": {"where": "http://localhost:8765/", "snippet": "old"}, "fix": "x",
+    })
+    (out_dir / "findings.json").write_text(json.dumps(data), encoding="utf-8")
+    raw = load_raw()
+    raw.update(error="timeout after 10 s", html=None, scripts=[], requests=[])
+    (out_dir / "raw" / "cafe-demo.json").write_text(json.dumps(raw), encoding="utf-8")
+    site = run_detect(out_dir)["sites"][0]
+    assert site["score"] is None and site["findings"] == []
+
+
 def test_rerun_keeps_policy_findings_without_duplicates(out_dir):
     data = run_detect(out_dir)
     judged = {

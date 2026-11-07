@@ -367,7 +367,7 @@ def run(raw_dir, findings_path):
     sites = []
     for path in sorted(raw_dir.glob("*.json")):
         raw = json.loads(path.read_text(encoding="utf-8"))
-        kept = [f for f in existing.get(raw["site"], []) if f.get("method") != "detected"]
+        kept = [] if raw.get("error") else [f for f in existing.get(raw["site"], []) if f.get("method") != "detected"]
         findings = merge_findings(kept, detect(raw))
         entry = site_entry(raw, findings)
         sites.append(entry)
