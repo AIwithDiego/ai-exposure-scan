@@ -52,7 +52,7 @@
     { "name": "Botsonic",               "country": "US", "eu": false, "eu_option": false, "match": ["widget.botsonic.com", "botsonic.com"] },
     { "name": "Chatwith",               "country": "US", "eu": false, "eu_option": false, "match": ["chatwith.tools"] },
     { "name": "Comm100",                "country": "CA", "eu": false, "eu_option": false, "match": ["chatserver.comm100.com", "vue.comm100.com", "Comm100API"] },
-    { "name": "Zoho SalesIQ",           "country": "IN", "eu": false, "eu_option": true,  "match": ["salesiq.zoho.com", "salesiq.zoho.eu", "salesiq.zoho.in", "salesiq.zoho.com.au", "salesiq.zoho.jp", "salesiq.zohopublic.com", "salesiq.zohopublic.eu", "salesiq.zohopublic.in", "salesiq.zohopublic.com.au", "salesiq.zohopublic.jp", "$zoho.salesiq"] },
+    { "name": "Zoho SalesIQ",           "country": "IN", "eu": false, "eu_option": true,  "match": ["salesiq.zoho.com", "salesiq.zoho.eu", "salesiq.zoho.in", "salesiq.zoho.com.au", "salesiq.zoho.jp", "salesiq.zoho.com.cn", "salesiq.zoho.sa", "salesiq.zoho.uk", "salesiq.zohopublic.com", "salesiq.zohopublic.eu", "salesiq.zohopublic.in", "salesiq.zohopublic.com.au", "salesiq.zohopublic.jp", "salesiq.zohopublic.com.cn", "salesiq.zohopublic.sa", "salesiq.zohopublic.uk", "salesiq.zohopublic.ca", "salesiq.zohocloud.ca", "$zoho.salesiq"] },
     { "name": "Haptik",                 "country": "IN", "eu": false, "eu_option": false, "match": ["haptikapi.com", "haptikInitSettings"] },
     { "name": "Verloop",                "country": "IN", "eu": false, "eu_option": false, "match": ["verloop.io"] },
     { "name": "Kommunicate",            "country": "IN", "eu": false, "eu_option": false, "match": ["kommunicate.io", "kommunicateSettings"] },
