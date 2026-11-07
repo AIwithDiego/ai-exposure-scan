@@ -148,7 +148,7 @@ function Overview({ data, onSelect }) {
                   onClick={() => onSelect(s.site)}
                   onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), onSelect(s.site))}
                 >
-                  <td data-label="Site" className="site-name">{s.site}</td>
+                  <td data-label="Site" className="site-name">{s.label || s.site}</td>
                   <td data-label="Score"><Score score={s.score} /></td>
                   <td data-label="High">{s.error ? "–" : countSeverity(findings, "high")}</td>
                   <td data-label="Medium">{s.error ? "–" : countSeverity(findings, "medium")}</td>
@@ -183,7 +183,69 @@ function CopyButton({ text }) {
   );
 }
 
-function FindingCard({ f }) {
+function hostOf(url) {
+  try {
+    return new URL(url).host;
+  } catch {
+    return "";
+  }
+}
+
+function pathOf(url) {
+  try {
+    return new URL(url).pathname;
+  } catch {
+    return "";
+  }
+}
+
+function howWeKnow(f, site) {
+  const where = f.evidence?.where || "";
+  const snippet = f.evidence?.snippet || "";
+  const host = hostOf(where);
+  const file = pathOf(where).split("/").pop();
+  const homepage = site.final_url && where.replace(/\/$/, "") === site.final_url.replace(/\/$/, "");
+  const missing = /not found/i.test(snippet);
+  const slug = (f.id || "").split(":").pop();
+
+  if (file === "robots.txt") {
+    return missing
+      ? "We asked for the site's robots.txt file and there wasn't one."
+      : "Found in the site's robots.txt file, which tells bots what they may read.";
+  }
+  if (file === "llms.txt") {
+    return missing
+      ? "We asked for the site's llms.txt file and there wasn't one."
+      : "Found in the site's llms.txt file, a short guide written for AI assistants.";
+  }
+  if (f.type === "data_transfer") {
+    const vendor = f.meta?.vendor || "this vendor";
+    const seen = /^[A-Z]+ https?:\/\//.test(snippet)
+      ? `We saw the homepage contact ${vendor} while loading.`
+      : `We spotted ${vendor} in the homepage code.`;
+    return `${seen} Where it's based comes from our list of AI vendors.`;
+  }
+  if (f.type === "disclosure") {
+    if (slug === "no-policy") return "We looked on the homepage for a link to a privacy policy and found none.";
+    if (slug.startsWith("bot-") && /^no chat greeting/i.test(snippet)) {
+      return "We looked for the chat greeting on the homepage and couldn't see it without opening the chat.";
+    }
+    if (slug.startsWith("bot-")) return "Read from the chat greeting text on the homepage.";
+    return "Read from the site's privacy policy.";
+  }
+  if (snippet.startsWith("<script")) return `Found in a script loaded from ${host}.`;
+  if (/^(GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD) /.test(snippet)) {
+    return `Seen when the page contacted ${host} while loading.`;
+  }
+  if (f.type === "agent_ready" && slug === "mcp" && homepage) return "Found on the homepage, where the site names it.";
+  if (where === "inline script" || homepage) return "Found in code written into the homepage.";
+  if (host && f.type === "key_leak") return `Found in the file ${file || host}, which every visitor's browser downloads.`;
+  if (host) return `Found in a file loaded from ${host}.`;
+  return null;
+}
+
+function FindingCard({ f, site }) {
+  const how = howWeKnow(f, site);
   const where = f.evidence?.where || "";
   const isLink = /^https?:\/\//.test(where);
   const judged = f.method === "judged";
@@ -209,6 +271,7 @@ function FindingCard({ f }) {
           <span>{where}</span>
         )}
         {f.evidence?.snippet && <pre className="snippet"><code>{f.evidence.snippet}</code></pre>}
+        {how && <p className="how">How we know: {how}</p>}
       </div>
       {f.fix && (
         <div className="fix">
@@ -230,7 +293,7 @@ function SiteView({ site, onBack }) {
       <button type="button" className="button" onClick={onBack}>← Back to all sites</button>
       <section className="panel site-head">
         <div>
-          <h2>{site.site}</h2>
+          <h2>{site.label || site.site}</h2>
           {site.final_url && (
             <a href={site.final_url} target="_blank" rel="noreferrer noopener">{site.final_url}</a>
           )}
@@ -250,7 +313,7 @@ function SiteView({ site, onBack }) {
             {group.length === 0 ? (
               <p className="muted">Nothing found</p>
             ) : (
-              group.map((f, i) => <FindingCard f={f} key={f.id || `${t.key}-${i}`} />)
+              group.map((f, i) => <FindingCard f={f} site={site} key={f.id || `${t.key}-${i}`} />)
             )}
           </section>
         );
@@ -285,6 +348,11 @@ export default function App() {
     <div className="page">
       <header className="header">
         <h1>AI Exposure Scan</h1>
+        {!site && (
+          <p className="explainer">
+            We visited each site once, like a normal visitor, and listed the AI it exposes. Nothing was hacked or tested.
+          </p>
+        )}
         {data && (
           <p className="muted">
             Scanned {formatTime(data.generated_at)} · {(data.sites || []).length}{" "}

@@ -175,9 +175,11 @@ def chatbots(raw):
         name = short_name(vendor["name"])
         is_api = "(called from the browser)" in vendor["name"]
         if is_api:
-            title = f"Your site calls the {name} from the browser"
-            fix = (f"Your site talks to the {name} directly from visitors' browsers. "
-                   "Ask your web person to move AI calls to the server and to list the provider in your privacy policy.")
+            provider = name.removesuffix(" API")
+            title = f"Your site sends requests to {provider} from visitors' browsers"
+            fix = (f"Your pages send requests to {provider}'s AI service from each visitor's browser, "
+                   "which can expose your account details. Ask your web person to send these requests "
+                   f"through your own server instead, and to name {provider} in your privacy policy.")
         else:
             title = f"{name} chat widget on the homepage"
             fix = (f"Your site has a chat window from {name}. That's fine; "
@@ -200,7 +202,7 @@ def data_transfer(raw, vendors_found):
         is_api = "(called from the browser)" in vendor["name"]
         what = "Visitor data" if is_api else "Chat messages"
         title = f"{what} likely go to {country} ({name})"
-        fix = f"{name} is based in {country}, so this data likely leaves the EU. "
+        fix = f"{name} is a company based in {country}, so this data is likely stored outside the EU. "
         if vendor["eu_option"]:
             fix += f"Ask your web person whether {name}'s EU data hosting is switched on."
         else:
@@ -240,12 +242,13 @@ def _key_finding(raw, pattern, digest, where, snippet):
     key_type = short_name(pattern["key_type"])
     if pattern["severity"] == "high":
         title = f"Secret {key_type} key visible in your site's code"
-        fix = (f"A secret {key_type} key is visible to anyone who opens your site's code. "
-               f"Ask your web person to delete this key in {key_type} today and move AI calls to the server.")
+        fix = (f"This key works like a password for your {key_type} account, and anyone who views your "
+               "site's code can copy it and run up charges. Ask your web person to cancel it in your "
+               f"{key_type} account and keep the replacement on your server, out of the page.")
     else:
-        title = f"{key_type} key visible in your site's code (likely Maps)"
-        fix = (f"This looks like a {key_type} key, usually a Maps key that is meant to be public. "
-               "Ask your web person to check it is restricted to your website.")
+        title = f"{key_type} key in your site's code (probably a public Maps key)"
+        fix = (f"This looks like a {key_type} key, usually for Maps, which is meant to be public. "
+               "Nothing urgent: ask your web person to check it only works on your website.")
     return finding(raw, "key_leak", f"{slugify(key_type)}-{digest}", title, pattern["severity"],
                    where, snippet, fix, {"key_type": key_type})
 
@@ -277,10 +280,10 @@ def parse_robots(text):
 def _crawler_rules(raw):
     where = origin(raw) + "/robots.txt"
     robots = raw.get("robots_txt")
-    fix_none = ("Optional: your robots.txt can say which AI companies may read your site. "
+    fix_none = ("Optional: a robots.txt file tells bots which pages they may read, including AI companies' bots. "
                 "Ask your web person if you'd like to allow or block them.")
     if robots is None:
-        return finding(raw, "agent_ready", "crawler-rules", "No robots.txt, so no AI crawler rules", "info",
+        return finding(raw, "agent_ready", "crawler-rules", "No rules for AI bots (no robots.txt file)", "info",
                        where, "robots.txt not found", fix_none, {"blocked": [], "allowed": [], "not_mentioned": [c["agent"] for c in CRAWLERS]})
     groups = parse_robots(robots)
     blocked, allowed, not_mentioned, used = [], [], [], []
@@ -298,17 +301,18 @@ def _crawler_rules(raw):
     lines = [ln for i in sorted(used) for ln in groups[i][2]]
     meta = {"blocked": blocked, "allowed": allowed, "not_mentioned": not_mentioned}
     if not blocked and not allowed:
-        return finding(raw, "agent_ready", "crawler-rules", "No AI crawler rules in robots.txt", "info",
+        return finding(raw, "agent_ready", "crawler-rules", "No rules for AI bots in robots.txt", "info",
                        where, robots[:SNIPPET_MAX].strip() or "robots.txt is empty", fix_none, meta)
     parts = []
     if blocked:
         parts.append(f"blocks {', '.join(blocked)}")
     if allowed:
         parts.append(f"allows {', '.join(allowed)}")
-    title = clip(f"robots.txt {' and '.join(parts)}", 70)
-    fix = ("Your robots.txt has rules for some AI crawlers. Others are not mentioned, so they follow your general rules. "
+    title = clip(f"Your robots.txt {' and '.join(parts)}", 70)
+    fix = ("Your robots.txt file tells some AI companies' bots whether they may read your site. "
+           "Others aren't mentioned, so they follow your general rules. "
            "Ask your web person to review the list if that's not what you want.") if not_mentioned else \
-          "Your robots.txt has rules for every known AI crawler. Nothing to do."
+          "Your robots.txt file has rules for every AI bot we know of. Nothing to do."
     return finding(raw, "agent_ready", "crawler-rules", title, "info", where, " | ".join(lines), fix, meta)
 
 
@@ -343,9 +347,9 @@ def _mcp(raw):
                     url, start, end = line_url.group(0), m.start(), m.end()
                     break
         if url:
-            return finding(raw, "agent_ready", "mcp", "Your site names an MCP server for AI agents", "info",
+            return finding(raw, "agent_ready", "mcp", "Your site offers AI assistants a way to connect (MCP)", "info",
                            where, line_around(text, start, end),
-                           "AI assistants can use this to work with your business. "
+                           "AI assistants can use this connection to look up or do things with your business. "
                            "Ask your web person to make sure it only shares what you're happy to share.",
                            {"mcp_url": url})
     return None
@@ -356,14 +360,14 @@ def agent_ready(raw):
     llms_where = origin(raw) + "/llms.txt"
     llms = raw.get("llms_txt")
     if llms is None:
-        findings.append(finding(raw, "agent_ready", "no-llms-txt", "No llms.txt", "info", llms_where,
+        findings.append(finding(raw, "agent_ready", "no-llms-txt", "No llms.txt guide for AI assistants", "info", llms_where,
                                 "llms.txt not found",
                                 "Optional: an llms.txt file tells AI assistants what your business is about. "
                                 "Your web person can add one in a few minutes."))
     else:
         first = next((ln for ln in llms.splitlines() if ln.strip()), "llms.txt is empty")
-        findings.append(finding(raw, "agent_ready", "has-llms-txt", "Has llms.txt", "info", llms_where, first,
-                                "Your llms.txt tells AI assistants what your business is about. "
+        findings.append(finding(raw, "agent_ready", "has-llms-txt", "Has an llms.txt guide for AI assistants", "info", llms_where, first,
+                                "Your llms.txt file tells AI assistants what your business is about. "
                                 "Ask your web person to keep it up to date."))
     findings.append(_crawler_rules(raw))
     mcp = _mcp(raw)
@@ -383,7 +387,7 @@ def detect(raw):
 
 
 def site_entry(raw, findings):
-    return {
+    entry = {
         "site": raw["site"],
         "final_url": raw.get("final_url"),
         "status": raw.get("status"),
@@ -391,6 +395,9 @@ def site_entry(raw, findings):
         "score": compute_score(findings, raw.get("error")),
         "findings": findings,
     }
+    if raw.get("label"):
+        entry = {"site": entry.pop("site"), "label": mask_all_keys(raw["label"]), **entry}
+    return entry
 
 
 def run(raw_dir, findings_path):

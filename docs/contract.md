@@ -63,6 +63,8 @@ Rules:
 }
 ```
 
+Optional site field `label`: a display name from a `data/sites.txt` line like `http://localhost:8765/ | Bella's Café (demo)`. The fetcher stores it as `label` in the raw file and it is carried to the site entry; the dashboard shows `label || site`. `site` and `id` never change.
+
 ### Finding
 
 ```json

@@ -3,6 +3,7 @@
 Writes out/raw/<site>.json in the format of docs/contract.md section 1.
 """
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
@@ -50,20 +51,31 @@ COLLECT_SCRIPTS_JS = """
 """
 
 
-def read_sites(path):
-    """Read one domain or URL per line, skipping blanks and # comments. Returns URLs."""
-    urls = []
+LABEL_SEP = re.compile(r"\s+\|")  # " | name"; a | inside a URL (no space before it) stays part of the URL
+
+
+def read_site_entries(path):
+    """Read one domain or URL per line, optionally followed by " | display name", skipping blanks
+    and # comments. Returns (url, label) pairs; label is None when not given."""
+    entries = []
     for line in Path(path).read_text(encoding="utf-8").splitlines():
         line = line.strip()
         if not line or line.startswith("#"):
             continue
+        parts = LABEL_SEP.split(line, maxsplit=1)
+        line, label = parts[0].strip(), (parts[1].strip() if len(parts) > 1 else "")
         if not line.startswith(("http://", "https://")):
             line = "https://" + line
         parts = urlsplit(line)
         if parts.path == "":
             line = urlunsplit(parts._replace(path="/"))
-        urls.append(line)
-    return urls
+        entries.append((line, label or None))
+    return entries
+
+
+def read_sites(path):
+    """URLs from read_site_entries, without labels."""
+    return [url for url, _ in read_site_entries(path)]
 
 
 def site_name(url):
@@ -87,8 +99,8 @@ def _now():
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def empty_raw(url):
-    return {
+def empty_raw(url, label=None):
+    raw = {
         "site": site_name(url),
         "url": url,
         "final_url": None,
@@ -103,6 +115,9 @@ def empty_raw(url):
         "llms_txt": None,
         "privacy_policy": None,
     }
+    if label:
+        raw["label"] = label
+    return raw
 
 
 def _looks_like_html(content_type, body):
@@ -147,9 +162,9 @@ def _fetch_privacy(context, url):
         page.close()
 
 
-def fetch_site(browser, url):
+def fetch_site(browser, url, label=None):
     """Visit one site passively and return its raw dict. Never raises."""
-    raw = empty_raw(url)
+    raw = empty_raw(url, label)
     context = browser.new_context(user_agent=USER_AGENT, viewport=VIEWPORT, ignore_https_errors=True)
     try:
         page = context.new_page()
@@ -272,13 +287,13 @@ def summary_line(raw):
 
 def run(sites_path, out_dir):
     """Fetch every site in sites_path and write one raw file each. Returns the written paths."""
-    urls = read_sites(sites_path)
+    entries = read_site_entries(sites_path)
     paths = []
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         try:
-            for url in urls:
-                raw = fetch_site(browser, url)
+            for url, label in entries:
+                raw = fetch_site(browser, url, label)
                 paths.append(write_raw(raw, out_dir))
                 print(summary_line(raw), flush=True)
         finally:

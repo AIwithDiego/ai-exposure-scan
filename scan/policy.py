@@ -190,8 +190,9 @@ def bot_disclosure(raw, ask):
                        "Good: visitors know they're talking to AI.", engine)
     if answer == "no":
         return finding(raw, "bot-not-ai", "The chat assistant doesn't say it's AI", "medium", where, quote,
-                       "If this chat uses AI, the EU AI Act says people should know they're talking to AI. "
-                       "Ask your web person to add 'I'm an AI assistant' to the greeting.", engine)
+                       "If this chat is run by AI, EU rules (the AI Act) say visitors should be told they're "
+                       "talking to AI. Ask your web person to add a line like 'I'm an AI assistant' to the greeting.",
+                       engine)
     return finding(raw, "bot-unknown", "Couldn't tell if the chat says it's AI", "low", where, quote,
                    "We couldn't tell from the greeting whether the chat says it's AI. "
                    "Check it tells visitors they're talking to an AI assistant, if it is one.", engine)
@@ -315,6 +316,10 @@ def run(raw_dir, findings_path):
                      "error": raw.get("error"), "score": None, "findings": []}
             data["sites"].append(entry)
             by_site[raw["site"]] = entry
+        if raw.get("label"):
+            entry["label"] = mask_all_keys(raw["label"])
+        else:
+            entry.pop("label", None)
         kept = [f for f in entry.get("findings", []) if not _is_ours(f)]
         new = judge(raw, kept, ask)
         entry["findings"] = merge_findings(kept, new)
