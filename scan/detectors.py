@@ -7,6 +7,7 @@ import json
 import re
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from scan.score import compute_score, merge_findings
 
@@ -46,11 +47,47 @@ def mask_key(key):
     return key[:8] + "…" + key[-4:]
 
 
+def key_spans(text):
+    """Sorted (start, end, pattern) for every key in text; earlier patterns win overlaps."""
+    taken = []
+    for p in KEY_PATTERNS:
+        for m in p["compiled"].finditer(text):
+            s, e = m.span()
+            if not any(s < te and ts < e for ts, te, _ in taken):
+                taken.append((s, e, p))
+    return sorted(taken, key=lambda t: t[0])
+
+
+def mask_text(text):
+    """Mask every key in the whole text. Returns (masked, spans, to_masked), where spans are
+    key_spans(text) and to_masked(i, end=False) maps an index in text to one in masked."""
+    spans = key_spans(text)
+    parts, moved, pos, mpos = [], [], 0, 0
+    for s, e, _ in spans:
+        masked = mask_key(text[s:e])
+        parts += [text[pos:s], masked]
+        mpos += s - pos
+        moved.append((s, e, mpos, mpos + len(masked)))
+        mpos += len(masked)
+        pos = e
+    parts.append(text[pos:])
+
+    def to_masked(i, end=False):
+        delta = 0
+        for s, e, ms, me in moved:
+            if i <= s:
+                break
+            if i < e:
+                return me if end else ms
+            delta = me - e
+        return i + delta
+
+    return "".join(parts), spans, to_masked
+
+
 def mask_all_keys(text):
     """Mask every key-like string in text."""
-    for p in KEY_PATTERNS:
-        text = p["compiled"].sub(lambda m: mask_key(m.group(0)), text)
-    return text
+    return mask_text(text)[0]
 
 
 def clip(text, limit=SNIPPET_MAX):
@@ -59,7 +96,10 @@ def clip(text, limit=SNIPPET_MAX):
 
 
 def line_around(text, start, end, limit=SNIPPET_MAX):
-    """The line containing text[start:end], trimmed to limit chars centred on the match."""
+    """The line containing text[start:end], trimmed to limit chars centred on the match.
+    Keys are masked in the whole text before the window is cut."""
+    text, _, to_masked = mask_text(text)
+    start, end = to_masked(start), to_masked(end, end=True)
     line_start = text.rfind("\n", 0, start) + 1
     line_end = text.find("\n", end)
     if line_end == -1:
@@ -68,7 +108,7 @@ def line_around(text, start, end, limit=SNIPPET_MAX):
         half = (limit - (end - start)) // 2
         line_start = max(line_start, start - max(half, 0))
         line_end = min(line_end, line_start + limit)
-    return clip(mask_all_keys(text[line_start:line_end]), limit)
+    return clip(text[line_start:line_end], limit)
 
 
 def page_url(raw):
@@ -97,17 +137,22 @@ def finding(raw, type_, slug, title, severity, where, snippet, fix, meta=None):
 
 # ---------- checks ----------
 
+def _host_path(url):
+    parts = urlsplit(url)
+    return parts.netloc + parts.path
+
+
 def _vendor_hit(raw, vendor):
     """First (where, snippet) where any of the vendor's match strings appears, else None."""
     matches = vendor["match"]
     for s in raw.get("scripts") or []:
         src = s.get("src")
-        if src and any(m in src for m in matches):
+        if src and any(m in _host_path(src) for m in matches):
             return src, f'<script src="{src}">'
     for r in raw.get("requests") or []:
         url = r.get("url") or ""
         domain = r.get("domain") or ""
-        if any(m in domain or m in url for m in matches):
+        if any(m in domain or m in _host_path(url) for m in matches):
             return url, f"{r.get('method', 'GET')} {url}"
     for s in raw.get("scripts") or []:
         content = s.get("content")
@@ -135,7 +180,7 @@ def chatbots(raw):
                    "Ask your web person to move AI calls to the server and to list the provider in your privacy policy.")
         else:
             title = f"{name} chat widget on the homepage"
-            fix = (f"Your site has a {name} chat window. That's fine; "
+            fix = (f"Your site has a chat window from {name}. That's fine; "
                    "just make sure it's named in your privacy policy.")
         meta = {"vendor": name, "country": vendor["country"], "eu": vendor["eu"]}
         findings.append(finding(raw, "chatbot", slugify(name), title, "info", where, snippet, fix, meta))
@@ -179,20 +224,15 @@ def key_leaks(raw):
     findings = []
     seen = set()
     for where, text in _key_sources(raw):
-        taken = []  # spans already claimed by an earlier (more specific) pattern
-        for p in KEY_PATTERNS:
-            for m in p["compiled"].finditer(text):
-                start, end = m.span()
-                if any(start < e and s < end for s, e in taken):
-                    continue
-                taken.append((start, end))
-                digest = hashlib.sha256(m.group(0).encode()).hexdigest()[:10]
-                if digest in seen:
-                    continue
-                seen.add(digest)
-                lo, hi = max(0, start - KEY_CONTEXT), min(len(text), end + KEY_CONTEXT)
-                snippet = text[lo:start] + mask_key(m.group(0)) + text[end:hi]
-                findings.append(_key_finding(raw, p, digest, where, snippet))
+        masked, spans, to_masked = mask_text(text)
+        for start, end, p in spans:
+            digest = hashlib.sha256(text[start:end].encode()).hexdigest()[:10]
+            if digest in seen:
+                continue
+            seen.add(digest)
+            mstart, mend = to_masked(start), to_masked(end, end=True)
+            snippet = masked[max(0, mstart - KEY_CONTEXT):mend + KEY_CONTEXT]
+            findings.append(_key_finding(raw, p, digest, where, snippet))
     return findings
 
 

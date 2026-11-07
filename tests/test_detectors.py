@@ -241,3 +241,42 @@ def test_empty_agent_files_still_have_evidence():
     raw = load_raw()
     raw.update(robots_txt="", llms_txt="  \n")
     assert all(f["evidence"]["snippet"] for f in detectors.agent_ready(raw))
+
+
+OPENAI = "sk-proj-" + "Qw3rTy8uIoPaSdFgHjKlZx"
+HF = "hf_" + "Mn7bVcXz5LkJhGfDsAqWeRtYuIoP9a"
+MAPS_A = "AIza" + "SyA1b2C3d4E5f6G7h8I9j0KlMnOpQrStUvW"
+MAPS_B = "AIza" + "SyZ9y8X7w6V5u4T3s2R1q0PoNmLkJiHgFeD"
+
+
+def _no_hidden_part(out, *keys):
+    for key in keys:
+        hidden = key[8:-4]
+        assert not any(hidden[i:i + 5] in out for i in range(len(hidden) - 4)), key
+
+
+@pytest.mark.parametrize("content", [
+    f'const a="{OPENAI}",b="{HF}";',
+    f'maps=["{MAPS_A}","{MAPS_B}"]',
+])
+def test_adjacent_keys_are_masked_before_cutting(content):
+    raw = load_raw()
+    raw.update(html="", scripts=[{"src": None, "inline": True, "content": content}])
+    leaks = detectors.key_leaks(raw)
+    assert len(leaks) == 2
+    _no_hidden_part(json.dumps(leaks, ensure_ascii=False), OPENAI, HF, MAPS_A, MAPS_B)
+
+
+def test_line_around_masks_key_cut_by_window():
+    text = "intercomSettings " + "word " * 34 + OPENAI + " tail"
+    snippet = detectors.line_around(text, 0, len("intercomSettings"))
+    assert snippet.startswith("intercomSettings")
+    _no_hidden_part(snippet, OPENAI)
+
+
+def test_vendor_match_ignores_query_string():
+    raw = load_raw()
+    raw.update(scripts=[{"src": "https://cdn.example/app.js?from=code.tidio.co", "inline": False, "content": ""}],
+               requests=[{"url": "https://cdn.example/p?ref=code.tidio.co", "domain": "cdn.example",
+                          "method": "GET", "resource_type": "xhr"}])
+    assert "Tidio" not in {b["meta"]["vendor"] for b in detectors.chatbots(raw)}
