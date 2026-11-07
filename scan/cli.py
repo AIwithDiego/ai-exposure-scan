@@ -2,10 +2,12 @@ import argparse
 import importlib
 import importlib.util
 import json
+import shutil
 from pathlib import Path
 
 DEFAULT_SITES = "data/sites.txt"
 DEFAULT_OUT = "out"
+DASHBOARD_FINDINGS = Path(__file__).resolve().parent.parent / "dashboard" / "public" / "findings.json"
 
 
 def _part(name):
@@ -59,11 +61,43 @@ def _rescore_and_summarise(findings_path):
         print(f"{site['site']:<30} {shown:>5} {sev.count('high'):>5} {sev.count('medium'):>7}")
 
 
+def _validate(findings_path):
+    from scan.validate import validate
+
+    problems = validate(json.loads(findings_path.read_text(encoding="utf-8")))
+    for p in problems:
+        print(f"contract: {p}")
+    return problems
+
+
+def _drop_stale_raw(raw_dir, sites_path):
+    """Remove raw files for sites that aren't in the current site list, so they don't reach findings.json."""
+    fetcher = _part("fetcher")
+    if fetcher is None or not raw_dir.exists():
+        return
+    keep = {fetcher.raw_filename(fetcher.site_name(url)) for url in fetcher.read_sites(sites_path)}
+    for path in raw_dir.glob("*.json"):
+        if path.name not in keep:
+            path.unlink()
+            print(f"all: removed stale {path}")
+
+
 def cmd_all(args):
     cmd_fetch(args)
+    _drop_stale_raw(Path(args.out) / "raw", args.sites)
     cmd_detect(args)
     cmd_policy(args)
-    _rescore_and_summarise(Path(args.out) / "findings.json")
+    findings_path = Path(args.out) / "findings.json"
+    if not findings_path.exists():
+        print("all: no findings.json written")
+        return 1
+    _rescore_and_summarise(findings_path)
+    if _validate(findings_path):
+        return 1
+    if not args.no_dashboard:
+        DASHBOARD_FINDINGS.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(findings_path, DASHBOARD_FINDINGS)
+        print(f"\ncopied to {DASHBOARD_FINDINGS.relative_to(DASHBOARD_FINDINGS.parents[2])}")
     return 0
 
 
@@ -74,12 +108,15 @@ def main(argv=None):
         "fetch": (cmd_fetch, "visit each site once and write out/raw/<site>.json"),
         "detect": (cmd_detect, "run plain-code checks on out/raw/*.json and write out/findings.json"),
         "policy": (cmd_policy, "read privacy policies and add disclosure findings"),
-        "all": (cmd_all, "fetch, detect and policy in order"),
+        "all": (cmd_all, "fetch, detect and policy in order, then copy findings.json to the dashboard"),
     }
     for name, (func, help_text) in commands.items():
         p = sub.add_parser(name, help=help_text)
         p.add_argument("--sites", default=DEFAULT_SITES, help="file with one domain or URL per line")
         p.add_argument("--out", default=DEFAULT_OUT, help="output directory (default: out)")
+        if name == "all":
+            p.add_argument("--no-dashboard", action="store_true",
+                           help="don't copy findings.json to dashboard/public/")
         p.set_defaults(func=func)
     args = parser.parse_args(argv)
     return args.func(args)
