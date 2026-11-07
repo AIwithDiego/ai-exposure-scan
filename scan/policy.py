@@ -15,7 +15,7 @@ from scan.score import compute_score, merge_findings
 
 POLICY_MAX = 30_000
 SNIPPET_MAX = 200
-ANTHROPIC_MODEL = "claude-haiku-4-5"
+ANTHROPIC_MODEL = "claude-haiku-5-5"
 OPENAI_MODEL = "gpt-4o-mini"
 
 AI_TERMS = ["artificial intelligence", "AI", "chatbot", "virtual assistant", "automated",
@@ -31,9 +31,10 @@ GREETING_LINE = re.compile(
     r"how can (?:i|we) help|ask me|chat with (?:us|me)|i'?m (?:a|an|your) [\w\s-]*(?:assistant|bot)",
     re.IGNORECASE)
 
-# Providers behind AI APIs and keys: chatbot meta.vendor / key_leak meta.key_type -> provider.
-PROVIDERS = {"OpenAI API": "OpenAI", "Anthropic API": "Anthropic", "Google Gemini API": "Google",
-             "OpenAI": "OpenAI", "Anthropic": "Anthropic", "Google": "Google"}
+# Providers behind browser AI API calls: chatbot meta.vendor -> provider.
+PROVIDERS = {"OpenAI API": "OpenAI", "Anthropic API": "Anthropic", "Google Gemini API": "Google"}
+# Google keys (AIza) are usually public Maps keys, so a key only implies OpenAI or Anthropic.
+KEY_PROVIDERS = {"OpenAI": "OpenAI", "Anthropic": "Anthropic"}
 ALIASES = {"OpenAI": ["OpenAI", "ChatGPT"], "Anthropic": ["Anthropic", "Claude"],
            "Google": ["Google", "Gemini"], "Tawk.to": ["Tawk.to", "Tawk"]}
 
@@ -189,7 +190,7 @@ def bot_disclosure(raw, ask):
                        "Good: visitors know they're talking to AI.", engine)
     if answer == "no":
         return finding(raw, "bot-not-ai", "The chat assistant doesn't say it's AI", "medium", where, quote,
-                       "Under the EU AI Act, people should know when they're talking to AI. "
+                       "If this chat uses AI, the EU AI Act says people should know they're talking to AI. "
                        "Ask your web person to add 'I'm an AI assistant' to the greeting.", engine)
     return finding(raw, "bot-unknown", "Couldn't tell if the chat says it's AI", "low", where, quote,
                    "We couldn't tell from the greeting whether the chat says it's AI. "
@@ -205,7 +206,7 @@ def ai_vendors(findings):
         if f.get("type") == "chatbot" and meta.get("vendor"):
             name = PROVIDERS.get(meta["vendor"], meta["vendor"])
         elif f.get("type") == "key_leak" and meta.get("key_type"):
-            name = PROVIDERS.get(short_name(meta["key_type"]))
+            name = KEY_PROVIDERS.get(short_name(meta["key_type"]))
         if name and name not in names:
             names.append(name)
     return names

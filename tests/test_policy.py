@@ -194,3 +194,14 @@ def test_vendor_named_after_cap_wins_over_early_denial():
     raw["privacy_policy"]["text"] = "We do not use Tidio for email. " + "Filler text. " * 3000 + "We use Tidio for chat."
     found = {f["id"] for f in policy.judge(raw, [chatbot("Tidio")], lambda p: '{"answer": "no", "quote": ""}')}
     assert f"{SITE}:disclosure:policy-tidio" not in found
+
+
+def test_google_key_alone_does_not_ask_about_google():
+    raw = load_raw()
+    key_leak = {"id": f"{SITE}:key_leak:google-abc", "type": "key_leak", "title": "Google key",
+                "severity": "low", "method": "detected", "evidence": {"where": "x", "snippet": "x"},
+                "fix": "x", "meta": {"key_type": "Google"}}
+    found = {f["id"] for f in policy.judge(raw, [key_leak])}
+    assert f"{SITE}:disclosure:policy-google" not in found
+    found = {f["id"] for f in policy.judge(raw, [chatbot("Google Gemini API")])}
+    assert f"{SITE}:disclosure:policy-google" in found
