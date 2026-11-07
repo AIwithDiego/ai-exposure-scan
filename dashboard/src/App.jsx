@@ -325,17 +325,92 @@ function SiteView({ site, onBack }) {
   );
 }
 
+function scanHost(text) {
+  const value = text.trim();
+  try {
+    return new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(value) ? value : `https://${value}`).host || value;
+  } catch {
+    return value;
+  }
+}
+
+function ScanBar({ onScanned }) {
+  const [url, setUrl] = useState("");
+  const [scanning, setScanning] = useState(null);
+  const [error, setError] = useState(null);
+
+  async function submit(e) {
+    e.preventDefault();
+    const value = url.trim();
+    if (!value || scanning) return;
+    setError(null);
+    setScanning(scanHost(value));
+    try {
+      const r = await fetch("/api/scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: value }),
+      });
+      if (!r.ok) {
+        const text = (await r.text()).trim();
+        throw new Error(text && !text.startsWith("<") ? text : `The scan server returned ${r.status}.`);
+      }
+      const entry = await r.json();
+      setUrl("");
+      onScanned(entry);
+    } catch (err) {
+      setError(err instanceof TypeError ? "Couldn't reach the scan server. Is it running?" : err.message);
+    } finally {
+      setScanning(null);
+    }
+  }
+
+  return (
+    <section className="scan" aria-label="Scan a website">
+      <form className="scan-bar" onSubmit={submit}>
+        <label htmlFor="scan-url" className="visually-hidden">Website to scan</label>
+        <input
+          id="scan-url"
+          className="scan-input"
+          type="text"
+          inputMode="url"
+          autoComplete="off"
+          spellCheck="false"
+          placeholder="Enter a website, e.g. example.ie"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          disabled={Boolean(scanning)}
+        />
+        <button type="submit" className="button scan-button" disabled={Boolean(scanning) || !url.trim()}>
+          {scanning ? "Scanning…" : "Scan"}
+        </button>
+      </form>
+      <div className="scan-status" aria-live="polite">
+        {scanning && (
+          <>
+            <p className="muted small">Scanning {scanning}... this takes about 15 seconds</p>
+            <div className="scan-progress" aria-hidden="true" />
+          </>
+        )}
+      </div>
+      {error && <div className="banner" role="alert">{error}</div>}
+    </section>
+  );
+}
+
 export default function App() {
   const [data, setData] = useState(null);
   const [loadError, setLoadError] = useState(null);
   const [selected, setSelected] = useState(null);
 
   useEffect(() => {
-    fetch("/findings.json")
-      .then((r) => {
-        if (!r.ok) throw new Error(`findings.json returned ${r.status}`);
+    const load = (path) =>
+      fetch(path).then((r) => {
+        if (!r.ok) throw new Error(`${path} returned ${r.status}`);
         return r.json();
-      })
+      });
+    load("/api/findings")
+      .catch(() => load("/findings.json"))
       .then(setData)
       .catch((e) => setLoadError(e.message));
   }, []);
@@ -343,6 +418,18 @@ export default function App() {
   function select(name) {
     setSelected(name);
     window.scrollTo(0, 0);
+  }
+
+  function addScanned(entry) {
+    setData((prev) => {
+      const sites = [...(prev?.sites || [])];
+      const i = sites.findIndex((s) => s.site === entry.site);
+      if (i >= 0) sites[i] = entry;
+      else sites.push(entry);
+      return { ...(prev || {}), generated_at: new Date().toISOString(), sites };
+    });
+    setLoadError(null);
+    select(entry.site);
   }
 
   const site = data && selected ? (data.sites || []).find((s) => s.site === selected) : null;
@@ -364,6 +451,7 @@ export default function App() {
         )}
       </header>
       <main>
+        {!site && <ScanBar onScanned={addScanned} />}
         {loadError && <div className="banner" role="alert">Couldn't load the scan results ({loadError}).</div>}
         {!data && !loadError && <p className="muted">Loading…</p>}
         {data && (site ? <SiteView site={site} onBack={() => select(null)} /> : <Overview data={data} onSelect={select} />)}

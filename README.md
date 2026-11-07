@@ -103,4 +103,14 @@ playwright install chromium
 
 `scripts/demo.sh` starts the fixture on port 8765, runs `python -m scan all --sites data/sites.txt` (fetch, detect, policy, rescore, check against `docs/contract.md`, copy `out/findings.json` to `dashboard/public/findings.json`), then starts the dashboard at http://localhost:5173. The fixture server stops when you exit. `SITES=path/to/list.txt ./scripts/demo.sh` scans another list.
 
+### Scan any website from the dashboard
+
+```
+./scripts/app.sh
+```
+
+`scripts/app.sh` checks that Python, Playwright's Chromium and ports 8765 and 8000 are ready, builds the dashboard (`npm install && npm run build`), starts the fixture on port 8765, then runs `python -m scan serve --port 8000 --allow-fixture`. Open http://localhost:8000, type a site (e.g. `example.ie`, or `localhost:8765` for the demo café) and press Scan. Each scan is one passive page load, added to `out/findings.json`. Ctrl-C stops both servers. `PYTHON=python3 ./scripts/app.sh` picks another Python.
+
+The server refuses addresses that resolve to private, local or link-local networks; `--allow-fixture` only opens `localhost:8765`. `POST /api/scan` only accepts `Content-Type: application/json`, and refuses requests whose `Origin` is not the dashboard (`http://localhost:<port>`, `http://127.0.0.1:<port>`, or the Vite dev server at `http://localhost:5173`), so other web pages open in your browser can't start scans. One scan runs at a time (others get "try again in a moment") and each is stopped after 60 seconds. For dashboard work, run `python -m scan serve` alongside `npm run dev`; the dev server proxies `/api` to port 8000.
+
 Check a findings file by hand with `python -m scan.validate out/findings.json`. Run the tests (fixture only, never live sites) with `pytest`.
