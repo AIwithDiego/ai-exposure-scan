@@ -75,3 +75,25 @@ def test_validator_catches_contract_breaks(findings):
     problems = " | ".join(validate(broken))
     for expected in ("score", "bad severity", "duplicate id", "missing ['fix']"):
         assert expected in problems
+
+
+def test_validator_reports_bad_sites_without_crashing(findings):
+    broken = json.loads(json.dumps(findings))
+    site = broken["sites"][0]
+    site["findings"].append(None)
+    site["final_url"] = "http://localhost/?k=sk-proj-DEMO0000FAKE0000NOTAREALKEY0000cafe"
+    broken["sites"].append({"site": None, "final_url": None, "status": 200, "error": None, "score": 100, "findings": []})
+    problems = " | ".join(validate(broken))
+    for expected in ("finding is not an object", "final_url contains an unmasked key", "site must be a non-empty string"):
+        assert expected in problems
+
+
+def test_all_drops_sites_not_in_the_list(tmp_path):
+    raw = tmp_path / "out" / "raw"
+    raw.mkdir(parents=True)
+    (raw / "old.example.json").write_text("{}", encoding="utf-8")
+    (raw / "localhost_8765.json").write_text("{}", encoding="utf-8")
+    sites = tmp_path / "sites.txt"
+    sites.write_text("http://localhost:8765/\n", encoding="utf-8")
+    cli._drop_stale_raw(raw, sites)
+    assert [p.name for p in raw.glob("*.json")] == ["localhost_8765.json"]

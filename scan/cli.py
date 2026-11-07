@@ -70,8 +70,21 @@ def _validate(findings_path):
     return problems
 
 
+def _drop_stale_raw(raw_dir, sites_path):
+    """Remove raw files for sites that aren't in the current site list, so they don't reach findings.json."""
+    fetcher = _part("fetcher")
+    if fetcher is None or not raw_dir.exists():
+        return
+    keep = {fetcher.raw_filename(fetcher.site_name(url)) for url in fetcher.read_sites(sites_path)}
+    for path in raw_dir.glob("*.json"):
+        if path.name not in keep:
+            path.unlink()
+            print(f"all: removed stale {path}")
+
+
 def cmd_all(args):
     cmd_fetch(args)
+    _drop_stale_raw(Path(args.out) / "raw", args.sites)
     cmd_detect(args)
     cmd_policy(args)
     findings_path = Path(args.out) / "findings.json"
