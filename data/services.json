@@ -33,6 +33,8 @@
     { "name": "Shopify",            "country": "CA", "eu": false, "category": "cdn",       "match": ["cdn.shopify.com", "shopify.com", "shopifycdn.net", "shopifysvc.com"] },
     { "name": "Wix",                "country": "IL", "eu": false, "category": "cdn",       "match": ["wixstatic.com", "parastorage.com", "wix.com", "wixapps.net"] },
     { "name": "Squarespace",        "country": "US", "eu": false, "category": "cdn",       "match": ["squarespace.com", "squarespace-cdn.com", "sqspcdn.com"] },
+    { "name": "WordPress.com / Jetpack", "country": "US", "eu": false, "category": "cdn",  "match": ["wp.com", "i0.wp.com", "c0.wp.com", "stats.wp.com"] },
+    { "name": "lemlist",            "country": "FR", "eu": true,  "category": "crm",       "match": ["lemlist.com"] },
     { "name": "Plausible",          "country": "EE", "eu": true,  "category": "analytics", "match": ["plausible.io"] },
     { "name": "Matomo Cloud",       "country": "NZ", "eu": false, "category": "analytics", "match": ["matomo.cloud", "innocraft.cloud"] }
   ]
