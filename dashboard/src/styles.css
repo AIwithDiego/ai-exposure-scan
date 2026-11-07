@@ -206,7 +206,7 @@ a { color: var(--link); word-break: break-all; text-underline-offset: 3px; }
 .site-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; border-color: var(--champagne-edge); --bloom: radial-gradient(220px 180px at calc(100% - 88px) 50%, rgba(227, 205, 156, 0.16), transparent 70%); }
 .site-head h2 { font-size: 1.5rem; margin-bottom: 4px; }
 .site-head a { font-family: var(--font-mono); font-size: 0.875rem; }
-.site-hosting { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; font-size: 0.9375rem; color: var(--text-2); }
+.site-hosting { --orb: var(--edge); display: flex; align-items: center; gap: 8px; margin: 0 0 6px; font-size: 0.9375rem; color: var(--text-2); }
 .site-hosting::before { content: ""; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--orb); box-shadow: 0 0 8px var(--orb); }
 .hosting-eu { --orb: var(--good); }
 .hosting-outside { --orb: var(--medium); }

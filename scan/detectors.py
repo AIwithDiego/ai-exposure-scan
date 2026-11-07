@@ -42,6 +42,52 @@ CDNS = [  # (name, header, substring in its value or None for "header present")
 ]
 
 
+# Edge locations a CDN names in its headers: IATA airport code (Cloudflare cf-ray suffix, CloudFront
+# x-amz-cf-pop, Fastly x-served-by) or Vercel region (x-vercel-id prefix, same letters) -> (city, country).
+EDGE_LOCATIONS = {
+    "DUB": ("Dublin", "IE"), "ORK": ("Cork", "IE"), "AMS": ("Amsterdam", "NL"), "FRA": ("Frankfurt", "DE"),
+    "MUC": ("Munich", "DE"), "DUS": ("Düsseldorf", "DE"), "HAM": ("Hamburg", "DE"), "BER": ("Berlin", "DE"),
+    "TXL": ("Berlin", "DE"), "CDG": ("Paris", "FR"), "MRS": ("Marseille", "FR"), "MAD": ("Madrid", "ES"),
+    "BCN": ("Barcelona", "ES"), "LIS": ("Lisbon", "PT"), "MXP": ("Milan", "IT"), "MIL": ("Milan", "IT"),
+    "FCO": ("Rome", "IT"), "VIE": ("Vienna", "AT"), "BRU": ("Brussels", "BE"), "CPH": ("Copenhagen", "DK"),
+    "ARN": ("Stockholm", "SE"), "HEL": ("Helsinki", "FI"), "WAW": ("Warsaw", "PL"), "PRG": ("Prague", "CZ"),
+    "BUD": ("Budapest", "HU"), "OTP": ("Bucharest", "RO"), "SOF": ("Sofia", "BG"), "ATH": ("Athens", "GR"),
+    "ZAG": ("Zagreb", "HR"), "LJU": ("Ljubljana", "SI"), "LUX": ("Luxembourg", "LU"), "RIX": ("Riga", "LV"),
+    "TLL": ("Tallinn", "EE"), "VNO": ("Vilnius", "LT"), "LHR": ("London", "GB"), "LON": ("London", "GB"),
+    "MAN": ("Manchester", "GB"), "EDI": ("Edinburgh", "GB"), "ZRH": ("Zurich", "CH"), "GVA": ("Geneva", "CH"),
+    "OSL": ("Oslo", "NO"), "IAD": ("Washington, D.C.", "US"), "EWR": ("Newark", "US"), "JFK": ("New York", "US"),
+    "LGA": ("New York", "US"), "BOS": ("Boston", "US"), "ATL": ("Atlanta", "US"), "MIA": ("Miami", "US"),
+    "ORD": ("Chicago", "US"), "CHI": ("Chicago", "US"), "DFW": ("Dallas", "US"), "DEN": ("Denver", "US"),
+    "PHX": ("Phoenix", "US"), "LAX": ("Los Angeles", "US"), "SFO": ("San Francisco", "US"),
+    "SJC": ("San Jose", "US"), "SEA": ("Seattle", "US"), "PDX": ("Portland", "US"), "CLE": ("Cleveland", "US"),
+    "YUL": ("Montreal", "CA"), "YYZ": ("Toronto", "CA"), "GRU": ("São Paulo", "BR"), "SIN": ("Singapore", "SG"),
+    "HKG": ("Hong Kong", "HK"), "NRT": ("Tokyo", "JP"), "HND": ("Tokyo", "JP"), "KIX": ("Osaka", "JP"),
+    "ICN": ("Seoul", "KR"), "BOM": ("Mumbai", "IN"), "SYD": ("Sydney", "AU"), "CPT": ("Cape Town", "ZA"),
+    "DXB": ("Dubai", "AE"),
+}
+
+
+def _edge_code(cdn, headers):
+    """Three-letter edge code from the CDN's own headers, or None."""
+    if cdn == "Vercel":
+        m = re.match(r"([a-z]{3})\d+::", headers.get("x-vercel-id", "").lower())
+    elif cdn == "Cloudflare":
+        m = re.search(r"-([A-Za-z]{3})$", headers.get("cf-ray", "").strip())
+    elif cdn == "CloudFront":
+        m = re.match(r"([A-Za-z]{3})", headers.get("x-amz-cf-pop", "").strip())
+    elif cdn == "Fastly":
+        m = re.search(r"-([A-Za-z]{3})$", headers.get("x-served-by", "").split(",")[-1].strip())
+    else:
+        m = None
+    return m.group(1).upper() if m else None
+
+
+def _edge(cdn, headers):
+    """(city, country code) of the CDN edge that answered, read from its headers; (None, None) if unknown."""
+    headers = {k.lower(): str(v) for k, v in (headers or {}).items()}
+    return EDGE_LOCATIONS.get(_edge_code(cdn, headers), (None, None))
+
+
 def _load(name):
     return json.loads((DATA_DIR / name).read_text(encoding="utf-8"))
 
@@ -258,8 +304,14 @@ def hosting(raw):
     cdn = _cdn(raw.get("server_headers"))
     country = country_name(code)
     in_eu = code in EU_COUNTRIES
+    edge_city, edge_country = _edge(cdn, raw.get("server_headers")) if cdn else (None, None)
     if cdn:
-        title = f"Your site is served through {cdn} from {country}"
+        # The IP belongs to the CDN's network, so its country says nothing about where the site lives.
+        if edge_city:
+            where = "EU" if edge_country in EU_COUNTRIES else {"GB": "UK"}.get(edge_country, edge_country)
+            title = f"Your site is served through {cdn} from {edge_city} ({where})"
+        else:
+            title = f"Your site is served through {cdn}'s global network"
         fix = (f"Your site is delivered through {cdn}, a network that answers visitors from a city near them, "
                "so the server we reached can differ from where your site really lives. "
                "Ask your web person where your main server is and that your privacy policy names your host.")
@@ -273,8 +325,8 @@ def hosting(raw):
                "your privacy policy.")
     headers = raw.get("server_headers") or {}
     snippet = " · ".join([f"server address {ip} ({code})"] + [f"{k}: {v}" for k, v in headers.items()])
-    meta = {"kind": "hosting", "ip_country": code, "cdn": cdn}
-    return [finding(raw, "data_transfer", "hosting", title, "info" if in_eu else "low", page_url(raw),
+    meta = {"kind": "hosting", "ip_country": code, "cdn": cdn, "edge_city": edge_city, "edge_country": edge_country}
+    return [finding(raw, "data_transfer", "hosting", title, "info" if in_eu or cdn else "low", page_url(raw),
                     snippet, fix, meta, method="judged" if cdn else "detected")]
 
 

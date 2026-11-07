@@ -116,7 +116,12 @@ function hostingLine(site) {
   if (!meta?.ip_country) return null;
   const code = meta.ip_country;
   const eu = EU_COUNTRIES.has(code);
-  if (meta.cdn) return { text: `Served through ${meta.cdn} (${code}) · real server may differ`, eu };
+  if (meta.cdn) {
+    if (!meta.edge_city) return { text: `Served through ${meta.cdn}'s global network · real server may differ`, eu: null };
+    const edgeEu = EU_COUNTRIES.has(meta.edge_country);
+    const where = edgeEu ? "EU" : meta.edge_country === "GB" ? "UK" : meta.edge_country;
+    return { text: `Served through ${meta.cdn} from ${meta.edge_city} (${where}) · real server may differ`, eu: edgeEu };
+  }
   return { text: `Hosted in ${countryName(code)} · ${eu ? "inside the EU" : "likely outside the EU"}`, eu };
 }
 
@@ -282,7 +287,7 @@ function howWeKnow(f, site) {
   if (f.type === "data_transfer" && f.meta?.kind === "hosting") {
     const base = "We noted the address of the server that answered when the homepage loaded and looked up its country in the DB-IP database.";
     return f.meta.cdn
-      ? `${base} The reply came through ${f.meta.cdn}, which answers from a city near the visitor, so the real server can be elsewhere.`
+      ? `We saw from the reply's headers that it came through ${f.meta.cdn}, which answers from a city near the visitor${f.meta.edge_city ? `; the headers name ${f.meta.edge_city} as the answering location` : ""}. The real server can be elsewhere.`
       : base;
   }
   if (f.type === "data_transfer" && f.meta?.kind === "services") {
@@ -397,7 +402,7 @@ function SiteView({ site, onBack }) {
         <div>
           <h2>{site.label || site.site}</h2>
           {hosted && (
-            <p className={`site-hosting ${hosted.eu ? "hosting-eu" : "hosting-outside"}`}>{hosted.text}</p>
+            <p className={`site-hosting ${hosted.eu === null ? "" : hosted.eu ? "hosting-eu" : "hosting-outside"}`}>{hosted.text}</p>
           )}
           {site.final_url && (
             <a href={site.final_url} target="_blank" rel="noreferrer noopener">{site.final_url}</a>

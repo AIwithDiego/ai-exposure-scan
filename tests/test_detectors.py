@@ -384,6 +384,13 @@ def test_path_match_stops_at_segment_boundary():
     assert [s["name"] for s in f["meta"]["services"]] == ["Facebook", "LinkedIn"]
 
 
+def test_wordpress_and_lemlist_are_services():
+    [f] = detectors.services(services_raw("i0.wp.com", "stats.wp.com", "app.lemlist.com"), [])
+    assert [(s["name"], s["category"], s["eu"]) for s in f["meta"]["services"]] == [
+        ("WordPress.com / Jetpack", "cdn", False), ("lemlist", "crm", True)]
+    assert f["meta"]["unknown_domains"] == []
+
+
 def test_own_domain_requests_ignored():
     [f] = detectors.services(services_raw("www.bellas.example", "img.bellas.example"), [])
     assert f["severity"] == "info" and f["meta"]["services"] == [] and f["meta"]["unknown_domains"] == []
@@ -414,7 +421,7 @@ def test_hosting_public_ip(monkeypatch):
     monkeypatch.setenv("GEOIP_CSV", str(GEO_SAMPLE))
     [f] = detectors.hosting(hosting_raw("85.214.132.117", {"server": "Apache"}))
     assert f["id"] == "bellas.example:data_transfer:hosting"
-    assert f["meta"] == {"kind": "hosting", "ip_country": "DE", "cdn": None}
+    assert f["meta"] == {"kind": "hosting", "ip_country": "DE", "cdn": None, "edge_city": None, "edge_country": None}
     assert f["severity"] == "info" and f["method"] == "detected"
     assert f["title"] == "Your site is hosted in Germany"
     [us] = detectors.hosting(hosting_raw("8.8.8.8"))
@@ -432,10 +439,38 @@ def test_hosting_private_or_missing_ip_gives_nothing(monkeypatch):
 def test_hosting_cdn_from_cf_ray_is_judged(monkeypatch):
     monkeypatch.setenv("GEOIP_CSV", str(GEO_SAMPLE))
     [f] = detectors.hosting(hosting_raw("104.21.32.1", {"cf-ray": "8e1234abcd-DUB"}))
-    assert f["method"] == "judged"
-    assert f["meta"] == {"kind": "hosting", "ip_country": "US", "cdn": "Cloudflare"}
-    assert f["title"] == "Your site is served through Cloudflare from the US"
-    assert "real server" in f["fix"] or "differ" in f["fix"]
+    assert f["method"] == "judged" and f["severity"] == "info"
+    assert f["meta"] == {"kind": "hosting", "ip_country": "US", "cdn": "Cloudflare",
+                         "edge_city": "Dublin", "edge_country": "IE"}
+    assert f["title"] == "Your site is served through Cloudflare from Dublin (EU)"
+    assert "differ" in f["fix"]
+
+
+def test_hosting_vercel_edge_from_x_vercel_id(monkeypatch):
+    monkeypatch.setenv("GEOIP_CSV", str(GEO_SAMPLE))
+    [f] = detectors.hosting(hosting_raw("104.21.32.1", {"x-vercel-id": "dub1::iad1::abc12-1730990000000-0f"}))
+    assert f["title"] == "Your site is served through Vercel from Dublin (EU)"
+    assert f["severity"] == "info" and f["method"] == "judged"
+    assert (f["meta"]["edge_city"], f["meta"]["edge_country"]) == ("Dublin", "IE")
+
+
+def test_hosting_cdn_edge_outside_eu_is_still_info(monkeypatch):
+    monkeypatch.setenv("GEOIP_CSV", str(GEO_SAMPLE))
+    [f] = detectors.hosting(hosting_raw("8.8.8.8", {"x-amz-cf-id": "abc", "x-amz-cf-pop": "IAD89-P2"}))
+    assert f["title"] == "Your site is served through CloudFront from Washington, D.C. (US)"
+    assert f["severity"] == "info"
+    [uk] = detectors.hosting(hosting_raw("8.8.8.8", {"x-served-by": "cache-lhr7321-LHR"}))
+    assert uk["title"] == "Your site is served through Fastly from London (UK)"
+
+
+def test_hosting_cdn_edge_unreadable(monkeypatch):
+    monkeypatch.setenv("GEOIP_CSV", str(GEO_SAMPLE))
+    [f] = detectors.hosting(hosting_raw("8.8.8.8", {"x-vercel-id": "something-else"}))
+    assert f["title"] == "Your site is served through Vercel's global network"
+    assert f["severity"] == "info" and f["method"] == "judged"
+    assert f["meta"]["edge_city"] is None and f["meta"]["edge_country"] is None
+    [cf] = detectors.hosting(hosting_raw("8.8.8.8", {"server": "cloudflare", "cf-ray": "8e1234abcd-QQQ"}))
+    assert cf["title"] == "Your site is served through Cloudflare's global network"
 
 
 def test_cdn_from_headers():

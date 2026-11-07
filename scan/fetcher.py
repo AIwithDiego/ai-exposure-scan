@@ -27,7 +27,7 @@ HTML_CAP = 2 * 1024 * 1024
 SCRIPT_CAP = 2 * 1024 * 1024
 TEXT_CAP = 200 * 1024
 
-SERVER_HEADERS = ["server", "via", "cf-ray", "x-vercel-id", "x-amz-cf-id", "x-served-by", "x-cache"]
+SERVER_HEADERS = ["server", "via", "cf-ray", "x-vercel-id", "x-amz-cf-id", "x-amz-cf-pop", "x-served-by", "x-cache"]
 
 PRIVACY_WORDS = ["privacy", "privacidad", "datenschutz", "confidentialit"]
 
