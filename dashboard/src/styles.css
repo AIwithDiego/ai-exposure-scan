@@ -122,6 +122,7 @@ a { color: var(--accent); word-break: break-all; }
 @media (max-width: 640px) {
   .page { padding: 20px 16px 48px; }
   .panel { padding: 16px; }
+  .cards { grid-template-columns: 1fr; }
   .sites thead { display: none; }
   .sites, .sites tbody, .sites tr, .sites td { display: block; width: 100%; }
   .sites tr { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; padding: 8px 4px; }
