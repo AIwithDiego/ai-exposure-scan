@@ -3,6 +3,7 @@
 Writes out/raw/<site>.json in the format of docs/contract.md section 1.
 """
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
@@ -50,6 +51,9 @@ COLLECT_SCRIPTS_JS = """
 """
 
 
+LABEL_SEP = re.compile(r"\s+\|")  # " | name"; a | inside a URL (no space before it) stays part of the URL
+
+
 def read_site_entries(path):
     """Read one domain or URL per line, optionally followed by " | display name", skipping blanks
     and # comments. Returns (url, label) pairs; label is None when not given."""
@@ -58,7 +62,8 @@ def read_site_entries(path):
         line = line.strip()
         if not line or line.startswith("#"):
             continue
-        line, _, label = (x.strip() for x in line.partition("|"))
+        parts = LABEL_SEP.split(line, maxsplit=1)
+        line, label = parts[0].strip(), (parts[1].strip() if len(parts) > 1 else "")
         if not line.startswith(("http://", "https://")):
             line = "https://" + line
         parts = urlsplit(line)

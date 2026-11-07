@@ -98,6 +98,8 @@ def test_read_site_entries_labels(tmp_path):
         ("http://localhost:8765/", "Bella's Café (demo)"), ("https://example.ie/", None), ("https://example.com/", None),
     ]
     assert fetcher.read_sites(f) == ["http://localhost:8765/", "https://example.ie/", "https://example.com/"]
+    f.write_text("https://a.example/?q=1|2 | Shop\nhttps://b.example/?q=1|2\n", encoding="utf-8")
+    assert fetcher.read_site_entries(f) == [("https://a.example/?q=1|2", "Shop"), ("https://b.example/?q=1|2", None)]
     assert fetcher.empty_raw("http://localhost:8765/", "Bella's Café (demo)")["label"] == "Bella's Café (demo)"
     assert "label" not in fetcher.empty_raw("https://example.ie/")
 
