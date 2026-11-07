@@ -44,3 +44,12 @@ def test_unreadable_file_is_none(tmp_path):
     bad = tmp_path / "bad.csv.gz"
     bad.write_bytes(b"not gzip")
     assert geo.country_of("8.8.8.8", bad) is None
+
+
+def test_partial_download_is_not_picked(tmp_path, monkeypatch):
+    monkeypatch.delenv(geo.ENV_VAR, raising=False)
+    monkeypatch.setattr(geo, "GEOIP_DIR", tmp_path)
+    (tmp_path / "dbip-country-lite-2026-10.csv").write_text(SAMPLE.read_text())
+    (tmp_path / "dbip-country-lite-2026-11.csv.gz.part").write_bytes(b"half")
+    assert geo.default_path().name == "dbip-country-lite-2026-10.csv"
+    assert geo.country_of("8.8.8.8") == "US"

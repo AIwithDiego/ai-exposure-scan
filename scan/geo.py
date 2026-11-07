@@ -22,7 +22,7 @@ def default_path():
     """GEOIP_CSV if set, else the newest dbip-country-lite-*.csv.gz in data/geoip/, else None."""
     if os.environ.get(ENV_VAR):
         return Path(os.environ[ENV_VAR])
-    files = sorted(GEOIP_DIR.glob("dbip-country-lite-*.csv*"))
+    files = sorted(f for f in GEOIP_DIR.glob("dbip-country-lite-*.csv*") if f.name.endswith((".csv", ".csv.gz")))
     return files[-1] if files else None
 
 

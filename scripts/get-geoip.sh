@@ -7,6 +7,7 @@ DIR=data/geoip
 MONTH="${MONTH:-$(date -u +%Y-%m)}"
 FILE="dbip-country-lite-$MONTH.csv.gz"
 mkdir -p "$DIR"
+trap 'rm -f "$DIR"/*.part' EXIT
 if [ -s "$DIR/$FILE" ]; then
   echo "get-geoip: $DIR/$FILE already there"
   exit 0
