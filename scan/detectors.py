@@ -387,7 +387,7 @@ def detect(raw):
 
 
 def site_entry(raw, findings):
-    return {
+    entry = {
         "site": raw["site"],
         "final_url": raw.get("final_url"),
         "status": raw.get("status"),
@@ -395,6 +395,9 @@ def site_entry(raw, findings):
         "score": compute_score(findings, raw.get("error")),
         "findings": findings,
     }
+    if raw.get("label"):
+        entry = {"site": entry.pop("site"), "label": raw["label"], **entry}
+    return entry
 
 
 def run(raw_dir, findings_path):

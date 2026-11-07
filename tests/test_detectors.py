@@ -78,6 +78,14 @@ def test_no_full_key_anywhere_in_output(out_dir, capsys):
     assert leak["evidence"]["where"].endswith("/js/menu-assistant.js")
 
 
+def test_site_entry_carries_optional_label():
+    raw = load_raw()
+    assert "label" not in detectors.site_entry(raw, [])
+    entry = detectors.site_entry({**raw, "label": "Bella's Café (demo)"}, [])
+    assert entry["label"] == "Bella's Café (demo)"
+    assert entry["site"] == raw["site"]
+
+
 def test_mask_key():
     assert detectors.mask_key("sk-proj-ABCDEFGHIJKLMNOPwxyz") == "sk-proj-…wxyz"
 

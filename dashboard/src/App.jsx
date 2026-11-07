@@ -148,7 +148,7 @@ function Overview({ data, onSelect }) {
                   onClick={() => onSelect(s.site)}
                   onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), onSelect(s.site))}
                 >
-                  <td data-label="Site" className="site-name">{s.site}</td>
+                  <td data-label="Site" className="site-name">{s.label || s.site}</td>
                   <td data-label="Score"><Score score={s.score} /></td>
                   <td data-label="High">{s.error ? "–" : countSeverity(findings, "high")}</td>
                   <td data-label="Medium">{s.error ? "–" : countSeverity(findings, "medium")}</td>
@@ -218,6 +218,9 @@ function howWeKnow(f, site) {
       ? "We asked for the site's llms.txt file and there wasn't one."
       : "Found in the site's llms.txt file, a short guide written for AI assistants.";
   }
+  if (f.type === "data_transfer") {
+    return `We spotted ${f.meta?.vendor || "this vendor"} in the homepage code. Where it's based comes from our list of AI vendors.`;
+  }
   if (f.type === "disclosure") {
     if (slug === "no-policy") return "We looked on the homepage for a link to a privacy policy and found none.";
     if (slug.startsWith("bot-") && /^no chat greeting/i.test(snippet)) {
@@ -286,7 +289,7 @@ function SiteView({ site, onBack }) {
       <button type="button" className="button" onClick={onBack}>← Back to all sites</button>
       <section className="panel site-head">
         <div>
-          <h2>{site.site}</h2>
+          <h2>{site.label || site.site}</h2>
           {site.final_url && (
             <a href={site.final_url} target="_blank" rel="noreferrer noopener">{site.final_url}</a>
           )}

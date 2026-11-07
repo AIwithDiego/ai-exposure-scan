@@ -91,6 +91,17 @@ def test_read_sites(tmp_path):
     ]
 
 
+def test_read_site_entries_labels(tmp_path):
+    f = tmp_path / "sites.txt"
+    f.write_text("http://localhost:8765/ | Bella's Café (demo)\nexample.ie\nexample.com |  \n", encoding="utf-8")
+    assert fetcher.read_site_entries(f) == [
+        ("http://localhost:8765/", "Bella's Café (demo)"), ("https://example.ie/", None), ("https://example.com/", None),
+    ]
+    assert fetcher.read_sites(f) == ["http://localhost:8765/", "https://example.ie/", "https://example.com/"]
+    assert fetcher.empty_raw("http://localhost:8765/", "Bella's Café (demo)")["label"] == "Bella's Café (demo)"
+    assert "label" not in fetcher.empty_raw("https://example.ie/")
+
+
 def test_failed_site_still_writes_file(tmp_path):
     sites = tmp_path / "sites.txt"
     sites.write_text("http://127.0.0.1:9/\n", encoding="utf-8")

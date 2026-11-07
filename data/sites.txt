@@ -1,6 +1,6 @@
-# One domain or URL per line. Max 10. Only our own sites, volunteers who said yes, or the fixture.
+# One domain or URL per line, optionally followed by " | display name". Max 10. Only our own sites, volunteers who said yes, or the fixture.
 # The fixture (start it first: python -m http.server 8765 --directory fixtures/cafe-demo)
-http://localhost:8765/
+http://localhost:8765/ | Bella's Café (demo)
 # Ours
 aiwithdiego.com
 # Volunteers: add below, only with their OK
