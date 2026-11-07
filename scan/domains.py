@@ -1,6 +1,6 @@
 """Shared host helpers."""
 
-GENERIC_SECOND_LEVEL = {"co", "com", "org", "net", "ac", "gov"}
+GENERIC_SECOND_LEVEL = {"co", "com", "org", "net", "ac", "gov", "edu"}
 
 
 def registrable(host):
