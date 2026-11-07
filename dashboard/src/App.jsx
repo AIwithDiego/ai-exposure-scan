@@ -183,7 +183,56 @@ function CopyButton({ text }) {
   );
 }
 
-function FindingCard({ f }) {
+function hostOf(url) {
+  try {
+    return new URL(url).host;
+  } catch {
+    return "";
+  }
+}
+
+function pathOf(url) {
+  try {
+    return new URL(url).pathname;
+  } catch {
+    return "";
+  }
+}
+
+function howWeKnow(f, site) {
+  const where = f.evidence?.where || "";
+  const snippet = f.evidence?.snippet || "";
+  const host = hostOf(where);
+  const file = pathOf(where).split("/").pop();
+  const homepage = site.final_url && where.replace(/\/$/, "") === site.final_url.replace(/\/$/, "");
+  const missing = /not found/i.test(snippet);
+
+  if (file === "robots.txt") {
+    return missing
+      ? "We asked for the site's robots.txt file and there wasn't one."
+      : "Found in the site's robots.txt file, which tells bots what they may read.";
+  }
+  if (file === "llms.txt") {
+    return missing
+      ? "We asked for the site's llms.txt file and there wasn't one."
+      : "Found in the site's llms.txt file, a short guide written for AI assistants.";
+  }
+  if (f.type === "disclosure") {
+    if (homepage) return "Read from the chat greeting text on the homepage.";
+    return "Read from the site's privacy policy.";
+  }
+  if (snippet.startsWith("<script")) return `Found in a script loaded from ${host}.`;
+  if (/^(GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD) /.test(snippet)) {
+    return `Seen when the page contacted ${host} while loading.`;
+  }
+  if (where === "inline script" || homepage) return "Found in code written into the homepage.";
+  if (host && f.type === "key_leak") return `Found in the file ${file || host}, which every visitor's browser downloads.`;
+  if (host) return `Found in a file loaded from ${host}.`;
+  return null;
+}
+
+function FindingCard({ f, site }) {
+  const how = howWeKnow(f, site);
   const where = f.evidence?.where || "";
   const isLink = /^https?:\/\//.test(where);
   const judged = f.method === "judged";
@@ -209,6 +258,7 @@ function FindingCard({ f }) {
           <span>{where}</span>
         )}
         {f.evidence?.snippet && <pre className="snippet"><code>{f.evidence.snippet}</code></pre>}
+        {how && <p className="how">How we know: {how}</p>}
       </div>
       {f.fix && (
         <div className="fix">
@@ -250,7 +300,7 @@ function SiteView({ site, onBack }) {
             {group.length === 0 ? (
               <p className="muted">Nothing found</p>
             ) : (
-              group.map((f, i) => <FindingCard f={f} key={f.id || `${t.key}-${i}`} />)
+              group.map((f, i) => <FindingCard f={f} site={site} key={f.id || `${t.key}-${i}`} />)
             )}
           </section>
         );
@@ -285,6 +335,11 @@ export default function App() {
     <div className="page">
       <header className="header">
         <h1>AI Exposure Scan</h1>
+        {!site && (
+          <p className="explainer">
+            We visited each site once, like a normal visitor, and listed the AI it exposes. Nothing was hacked or tested.
+          </p>
+        )}
         {data && (
           <p className="muted">
             Scanned {formatTime(data.generated_at)} · {(data.sites || []).length}{" "}
