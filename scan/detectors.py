@@ -259,7 +259,7 @@ def _crawler_rules(raw):
     meta = {"blocked": blocked, "allowed": allowed, "not_mentioned": not_mentioned}
     if not blocked and not allowed:
         return finding(raw, "agent_ready", "crawler-rules", "No AI crawler rules in robots.txt", "info",
-                       where, robots[:SNIPPET_MAX], fix_none, meta)
+                       where, robots[:SNIPPET_MAX].strip() or "robots.txt is empty", fix_none, meta)
     parts = []
     if blocked:
         parts.append(f"blocks {', '.join(blocked)}")
@@ -321,7 +321,7 @@ def agent_ready(raw):
                                 "Optional: an llms.txt file tells AI assistants what your business is about. "
                                 "Your web person can add one in a few minutes."))
     else:
-        first = next((ln for ln in llms.splitlines() if ln.strip()), "")
+        first = next((ln for ln in llms.splitlines() if ln.strip()), "llms.txt is empty")
         findings.append(finding(raw, "agent_ready", "has-llms-txt", "Has llms.txt", "info", llms_where, first,
                                 "Your llms.txt tells AI assistants what your business is about. "
                                 "Ask your web person to keep it up to date."))

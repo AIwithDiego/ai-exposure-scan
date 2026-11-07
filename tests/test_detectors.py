@@ -235,3 +235,9 @@ def test_crawler_rules_combine_groups():
 def test_allow_root_beats_disallow_root():
     meta = _crawler_meta("User-agent: GPTBot\nDisallow: /\nAllow: /\n")
     assert "GPTBot" in meta["allowed"] and "GPTBot" not in meta["blocked"]
+
+
+def test_empty_agent_files_still_have_evidence():
+    raw = load_raw()
+    raw.update(robots_txt="", llms_txt="  \n")
+    assert all(f["evidence"]["snippet"] for f in detectors.agent_ready(raw))
