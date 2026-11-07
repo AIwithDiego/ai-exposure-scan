@@ -298,7 +298,8 @@ def _matches_domain(host, domain):
 
 def _service_match(host, path, m):
     domain, _, prefix = m.partition("/")
-    return _matches_domain(host, domain) and (not prefix or path.startswith("/" + prefix))
+    prefix = "/" + prefix.rstrip("/")
+    return _matches_domain(host, domain) and (prefix == "/" or path == prefix or path.startswith(prefix + "/"))
 
 
 def _service_for(host, path=""):

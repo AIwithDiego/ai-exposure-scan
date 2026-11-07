@@ -384,6 +384,14 @@ def test_pixel_beacons_on_social_domains_are_not_social_services():
     assert f["meta"]["outside_eu_count"] == 2
 
 
+def test_path_match_stops_at_segment_boundary():
+    raw = services_raw()
+    raw["requests"] = [{"url": u, "domain": urlsplit(u).hostname, "method": "GET", "resource_type": "document"}
+                       for u in ("https://www.facebook.com/travel", "https://www.linkedin.com/li/trackers")]
+    [f] = detectors.services(raw, [])
+    assert [s["name"] for s in f["meta"]["services"]] == ["Facebook", "LinkedIn"]
+
+
 def test_own_domain_requests_ignored():
     [f] = detectors.services(services_raw("www.bellas.example", "img.bellas.example"), [])
     assert f["severity"] == "info" and f["meta"]["services"] == [] and f["meta"]["unknown_domains"] == []
