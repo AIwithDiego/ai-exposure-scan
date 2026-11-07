@@ -4,6 +4,7 @@ import sys
 import threading
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import pytest
 
@@ -139,6 +140,52 @@ def test_non_utf8_text_files_do_not_fail_site(tmp_path):
     assert raw["error"] is None and raw["status"] == 200
     assert "User-agent: *" in raw["robots_txt"] and "\ufffd" in raw["robots_txt"]
     assert raw["llms_txt"].startswith("# Caf")
+
+
+@pytest.fixture
+def privacy_fetches(monkeypatch):
+    """Record every privacy URL the fetcher tries to load; only localhost ones are actually loaded."""
+    calls = []
+    real = fetcher._fetch_privacy
+
+    def spy(context, url):
+        calls.append(url)
+        return real(context, url) if urlsplit(url).hostname == "localhost" else None
+
+    monkeypatch.setattr(fetcher, "_fetch_privacy", spy)
+    return calls
+
+
+def test_consent_banner_privacy_links_are_ignored(tmp_path, privacy_fetches):
+    raw = _fetch_local(ROOT / "fixtures" / "cookiebot-site", tmp_path)
+    assert raw["error"] is None and raw["status"] == 200
+    assert raw["privacy_policy"] is None
+    assert privacy_fetches == []
+    third_party = {"cookiebot.com", "www.hubspot.com", "policies.google.com"}
+    assert not any(r["domain"] in third_party for r in raw["requests"])
+
+
+def test_same_site_privacy_link_wins_over_banner_links(tmp_path, privacy_fetches):
+    raw = _fetch_local(ROOT / "fixtures" / "cookiebot-same-site", tmp_path)
+    policy = raw["privacy_policy"]
+    assert urlsplit(policy["url"]).hostname == "localhost"
+    assert urlsplit(policy["url"]).path.startswith("/privacy")
+    assert "data controller" in policy["text"]
+    assert all(urlsplit(u).hostname == "localhost" for u in privacy_fetches)
+
+
+@pytest.mark.parametrize("host, expected", [
+    ("www.zexel.io", "zexel.io"),
+    ("ZEXEL.IO", "zexel.io"),
+    ("shop.example.ie", "example.ie"),
+    ("www.example.co.uk", "example.co.uk"),
+    ("a.b.example.com.au", "example.com.au"),
+    ("co.uk", "co.uk"),
+    ("localhost", "localhost"),
+    ("127.0.0.1", "127.0.0.1"),
+])
+def test_registrable(host, expected):
+    assert fetcher._registrable(host) == expected
 
 
 def _fetch_local(site, tmp_path):

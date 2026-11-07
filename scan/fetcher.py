@@ -28,20 +28,47 @@ TEXT_CAP = 200 * 1024
 PRIVACY_WORDS = ["privacy", "privacidad", "datenschutz", "confidentialit"]
 
 FIND_PRIVACY_LINK_JS = """
-(words) => {
+({words, siteDomain}) => {
   const here = location.href.split('#')[0];
+  const consentBanner = '[id*="cookiebot" i], [class*="cookiebot" i], [id*="cybotcookiebot" i], '
+    + '[class*="cybotcookiebot" i], [id*="onetrust" i], [class*="onetrust" i], [id*="cookie-consent" i], '
+    + '[class*="cookie-consent" i], [id*="cmp" i], [class*="cmp" i]';
+  const vendorInfo = /more about (this|the) provider/i;
+  const sameSite = (url) => {
+    let host;
+    try { host = new URL(url).hostname.toLowerCase().replace(/^www\\./, ''); } catch (e) { return false; }
+    return host === siteDomain || host.endsWith('.' + siteDomain);
+  };
   for (const a of document.querySelectorAll('a[href]')) {
-    const text = (a.innerText || a.textContent || '').toLowerCase();
+    const rawText = a.innerText || a.textContent || '';
+    const text = rawText.toLowerCase();
     const href = (a.getAttribute('href') || '').toLowerCase();
-    if (words.some(w => text.includes(w) || href.includes(w))) {
-      const [target, hash = ''] = a.href.split('#');
-      const samePageAnchor = target === here && !hash.startsWith('/') && !hash.startsWith('!');
-      if (a.href.startsWith('http') && !samePageAnchor) return a.href;
-    }
+    if (!words.some(w => text.includes(w) || href.includes(w))) continue;
+    if (!a.href.startsWith('http') || !sameSite(a.href)) continue;
+    if (a.closest(consentBanner) || vendorInfo.test(rawText)) continue;
+    const [target, hash = ''] = a.href.split('#');
+    const samePageAnchor = target === here && !hash.startsWith('/') && !hash.startsWith('!');
+    if (!samePageAnchor) return a.href;
   }
   return null;
 }
 """
+
+GENERIC_SECOND_LEVEL = {"co", "com", "org", "net", "ac", "gov"}
+
+
+def _registrable(host):
+    """Heuristic registrable domain: 'www.shop.example.co.uk' -> 'example.co.uk', 'www.zexel.io' -> 'zexel.io'."""
+    host = (host or "").lower().rstrip(".")
+    if host.startswith("www."):
+        host = host[4:]
+    if host.replace(".", "").isdigit():
+        return host
+    labels = host.split(".")
+    if len(labels) >= 3 and labels[-2] in GENERIC_SECOND_LEVEL:
+        return ".".join(labels[-3:])
+    return ".".join(labels[-2:])
+
 
 COLLECT_SCRIPTS_JS = """
 () => Array.from(document.querySelectorAll('script')).map(s => ({
@@ -213,7 +240,8 @@ def fetch_site(browser, url, label=None):
         privacy_url = None
         if raw["error"] is None:
             try:
-                privacy_url = page.evaluate(FIND_PRIVACY_LINK_JS, PRIVACY_WORDS)
+                site_domain = _registrable(urlsplit(raw["final_url"] or url).hostname)
+                privacy_url = page.evaluate(FIND_PRIVACY_LINK_JS, {"words": PRIVACY_WORDS, "siteDomain": site_domain})
             except PlaywrightError:
                 privacy_url = None
         page.close()
