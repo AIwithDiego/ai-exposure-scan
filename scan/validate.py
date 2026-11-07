@@ -78,6 +78,8 @@ def validate(data):
             problems.append(f"{name}: missing {sorted(missing)}")
         if not isinstance(s.get("site"), str) or not s.get("site").strip():
             problems.append(f"{name}: site must be a non-empty string")
+        if "label" in s and (not isinstance(s["label"], str) or not s["label"].strip()):
+            problems.append(f"{name}: label, if present, must be a non-empty string")
         if isinstance(s.get("final_url"), str) and key_spans(s["final_url"]):
             problems.append(f"{name}: final_url contains an unmasked key")
         findings = s.get("findings")
