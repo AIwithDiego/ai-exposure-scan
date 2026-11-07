@@ -76,3 +76,20 @@ fixtures/
 - **Demo on our own sites, volunteers' sites, or the fixture.** We do not publish results about third parties.
 
 MIT licence.
+
+## Run
+
+Python 3.11+.
+
+```
+pip install -r requirements.txt
+playwright install chromium
+```
+
+Scan the fixture: start it in one terminal with `python -m http.server 8765 --directory fixtures/cafe-demo`, then in another:
+
+```
+python -m scan fetch --sites data/sites.txt   # writes out/raw/<site>.json
+python -m scan all --sites data/sites.txt     # fetch, then detect and policy once they exist
+pytest
+```
