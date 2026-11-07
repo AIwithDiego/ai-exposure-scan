@@ -152,6 +152,13 @@ def test_new_chat_vendors(vendor, where, value, outside_eu):
         assert transfers == []
 
 
+def test_vendor_sniffing_code_is_not_a_chatbot():
+    raw = _bare_raw()
+    sniff = 'void 0!==window.embedded_svc||void 0!==window.lwcRuntimeFlags'
+    raw["scripts"].append({"src": None, "inline": True, "content": sniff})
+    assert detectors.chatbots(raw) == []
+
+
 def test_vendor_match_strings_only_hit_their_own_vendor():
     for vendor in detectors.VENDORS:
         for m in vendor["match"]:
