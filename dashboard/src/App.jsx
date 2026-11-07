@@ -206,6 +206,7 @@ function howWeKnow(f, site) {
   const file = pathOf(where).split("/").pop();
   const homepage = site.final_url && where.replace(/\/$/, "") === site.final_url.replace(/\/$/, "");
   const missing = /not found/i.test(snippet);
+  const slug = (f.id || "").split(":").pop();
 
   if (file === "robots.txt") {
     return missing
@@ -218,13 +219,18 @@ function howWeKnow(f, site) {
       : "Found in the site's llms.txt file, a short guide written for AI assistants.";
   }
   if (f.type === "disclosure") {
-    if (homepage) return "Read from the chat greeting text on the homepage.";
+    if (slug === "no-policy") return "We looked on the homepage for a link to a privacy policy and found none.";
+    if (slug.startsWith("bot-") && /^no chat greeting/i.test(snippet)) {
+      return "We looked for the chat greeting on the homepage and couldn't see it without opening the chat.";
+    }
+    if (slug.startsWith("bot-")) return "Read from the chat greeting text on the homepage.";
     return "Read from the site's privacy policy.";
   }
   if (snippet.startsWith("<script")) return `Found in a script loaded from ${host}.`;
   if (/^(GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD) /.test(snippet)) {
     return `Seen when the page contacted ${host} while loading.`;
   }
+  if (f.type === "agent_ready" && slug === "mcp" && homepage) return "Found on the homepage, where the site names it.";
   if (where === "inline script" || homepage) return "Found in code written into the homepage.";
   if (host && f.type === "key_leak") return `Found in the file ${file || host}, which every visitor's browser downloads.`;
   if (host) return `Found in a file loaded from ${host}.`;
