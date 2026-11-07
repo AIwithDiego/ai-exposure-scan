@@ -89,7 +89,7 @@
     { "name": "User.com",                  "country": "FR", "eu": true,  "eu_option": true,  "match": ["userengage.io", "civchat"] },
     { "name": "iAdvize",                   "country": "FR", "eu": true,  "eu_option": true,  "match": ["halc.iadvize.com", "static.iadvize.com", "iAdvizeInterface"] },
     { "name": "Dydu",                      "country": "FR", "eu": true,  "eu_option": true,  "match": ["dydu.ai"] },
-    { "name": "Trengo",                    "country": "NL", "eu": true,  "eu_option": true,  "match": ["widget.trengo.eu", "trengo.com", "Trengo.key"] },
+    { "name": "Trengo",                    "country": "NL", "eu": true,  "eu_option": true,  "match": ["widget.trengo.eu", "Trengo.key"] },
     { "name": "Bird",                      "country": "NL", "eu": true,  "eu_option": true,  "match": ["messagebird.com", "mbirdcdn.net"] },
     { "name": "Watermelon",                "country": "NL", "eu": true,  "eu_option": true,  "match": ["watermelon.ai", "watermelon.co/"] },
     { "name": "Quriobot",                  "country": "NL", "eu": true,  "eu_option": true,  "match": ["quriobot.com", "qbOptions"] },
