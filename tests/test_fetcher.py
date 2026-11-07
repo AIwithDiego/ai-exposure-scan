@@ -224,3 +224,35 @@ def _fetch_local(site, tmp_path):
     finally:
         server.shutdown()
         server.server_close()
+
+
+def test_server_fields_follow_script_redirect(tmp_path):
+    class Tagged(QuietHandler):
+        def end_headers(self):
+            self.send_header("X-Served-By", "second-server")
+            super().end_headers()
+
+    second_dir, first_dir = tmp_path / "second", tmp_path / "first"
+    second_dir.mkdir()
+    first_dir.mkdir()
+    (second_dir / "index.html").write_text("<html><body>landed</body></html>", encoding="utf-8")
+    second = ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(Tagged, directory=str(second_dir)))
+    target = f"http://127.0.0.1:{second.server_address[1]}/"
+    (first_dir / "index.html").write_text(
+        "<html><body>first<script>addEventListener('DOMContentLoaded',"
+        f"() => setTimeout(() => location.href = '{target}', 50))</script></body></html>", encoding="utf-8")
+    first = ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(QuietHandler, directory=str(first_dir)))
+    for srv in (first, second):
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+    try:
+        sites = tmp_path / "sites.txt"
+        sites.write_text(f"http://127.0.0.1:{first.server_address[1]}/\n", encoding="utf-8")
+        [path] = fetcher.run(sites, tmp_path / "raw")
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    finally:
+        for srv in (first, second):
+            srv.shutdown()
+            srv.server_close()
+    assert raw["final_url"] == target
+    assert raw["server_ip"] == "127.0.0.1"
+    assert raw["server_headers"].get("x-served-by") == "second-server"

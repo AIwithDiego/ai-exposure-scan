@@ -209,9 +209,13 @@ def fetch_site(browser, url, label=None):
                 "resource_type": req.resource_type,
             })
 
+        main_responses = []
+
         def on_response(resp):
             if resp.request.resource_type == "script":
                 script_responses.append(resp)
+            if resp.request.is_navigation_request() and resp.frame == page.main_frame:
+                main_responses.append(resp)
 
         page.on("request", on_request)
         page.on("response", on_response)
@@ -219,14 +223,18 @@ def fetch_site(browser, url, label=None):
         try:
             response = page.goto(url, wait_until="domcontentloaded", timeout=GOTO_TIMEOUT_MS)
             raw["status"] = response.status if response else None
-            raw["server_ip"] = _server_ip(response)
-            raw["server_headers"] = _server_headers(response)
         except PlaywrightError as exc:
+            response = None
             raw["error"] = _short_error(exc)
         try:
             page.wait_for_load_state("networkidle", timeout=IDLE_TIMEOUT_MS)
         except PlaywrightError:
             pass
+        if response:
+            # A script redirect after DOMContentLoaded means the page we capture came from a later server.
+            main = main_responses[-1] if main_responses else response
+            raw["server_ip"] = _server_ip(main)
+            raw["server_headers"] = _server_headers(main)
 
         page.remove_listener("request", on_request)
         page.remove_listener("response", on_response)
