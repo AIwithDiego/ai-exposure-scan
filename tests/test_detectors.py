@@ -84,6 +84,9 @@ def test_site_entry_carries_optional_label():
     entry = detectors.site_entry({**raw, "label": "Bella's Café (demo)"}, [])
     assert entry["label"] == "Bella's Café (demo)"
     assert entry["site"] == raw["site"]
+    key = fixture_key()
+    masked = detectors.site_entry({**raw, "label": f"Demo {key}"}, [])["label"]
+    assert key not in masked and masked == f"Demo {detectors.mask_key(key)}"
 
 
 def test_mask_key():

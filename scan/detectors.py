@@ -396,7 +396,7 @@ def site_entry(raw, findings):
         "findings": findings,
     }
     if raw.get("label"):
-        entry = {"site": entry.pop("site"), "label": raw["label"], **entry}
+        entry = {"site": entry.pop("site"), "label": mask_all_keys(raw["label"]), **entry}
     return entry
 
 
