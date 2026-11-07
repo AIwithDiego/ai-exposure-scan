@@ -175,6 +175,9 @@ def test_vendor_entries_are_well_formed():
         assert v["country"] in detectors.COUNTRY_NAMES, v["name"]
         assert v["eu"] == (v["country"] in detectors.EU_COUNTRIES), v["name"]
         assert v["match"] and all(isinstance(m, str) and m for m in v["match"]), v["name"]
+        name, country = detectors.short_name(v["name"]), detectors.COUNTRY_NAMES[v["country"]]
+        for title in (f"{name} chat widget on the homepage", f"Chat messages likely go to {country} ({name})"):
+            assert len(title) < 70, title
 
 
 def _hubspot_vendors(raw):
