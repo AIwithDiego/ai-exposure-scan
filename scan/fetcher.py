@@ -5,7 +5,7 @@ Writes out/raw/<site>.json in the format of docs/contract.md section 1.
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, urlunsplit
 
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import TimeoutError as PlaywrightTimeout
@@ -28,11 +28,13 @@ PRIVACY_WORDS = ["privacy", "privacidad", "datenschutz", "confidentialit"]
 
 FIND_PRIVACY_LINK_JS = """
 (words) => {
+  const here = location.href.split('#')[0];
   for (const a of document.querySelectorAll('a[href]')) {
     const text = (a.innerText || a.textContent || '').toLowerCase();
     const href = (a.getAttribute('href') || '').toLowerCase();
     if (words.some(w => text.includes(w) || href.includes(w))) {
-      if (a.href.startsWith('http')) return a.href;
+      const target = a.href.split('#')[0];
+      if (target.startsWith('http') && target !== here) return target;
     }
   }
   return null;
@@ -56,8 +58,9 @@ def read_sites(path):
             continue
         if not line.startswith(("http://", "https://")):
             line = "https://" + line
-        if urlsplit(line).path == "":
-            line += "/"
+        parts = urlsplit(line)
+        if parts.path == "":
+            line = urlunsplit(parts._replace(path="/"))
         urls.append(line)
     return urls
 

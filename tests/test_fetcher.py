@@ -1,14 +1,18 @@
 import functools
 import json
+import sys
 import threading
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 import pytest
 
-from scan import fetcher
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
 
-FIXTURE = Path(__file__).resolve().parent.parent / "fixtures" / "cafe-demo"
+from scan import fetcher  # noqa: E402
+
+FIXTURE = ROOT / "fixtures" / "cafe-demo"
 
 
 class QuietHandler(SimpleHTTPRequestHandler):
@@ -80,8 +84,11 @@ def test_passive_only(raw):
 
 def test_read_sites(tmp_path):
     f = tmp_path / "sites.txt"
-    f.write_text("# comment\n\nexample.ie\nhttp://localhost:8765/\nhttps://a.example/x\n", encoding="utf-8")
-    assert fetcher.read_sites(f) == ["https://example.ie/", "http://localhost:8765/", "https://a.example/x"]
+    f.write_text("# comment\n\nexample.ie\nhttp://localhost:8765/\nhttps://a.example/x\nexample.com?view=shop\n",
+                 encoding="utf-8")
+    assert fetcher.read_sites(f) == [
+        "https://example.ie/", "http://localhost:8765/", "https://a.example/x", "https://example.com/?view=shop",
+    ]
 
 
 def test_failed_site_still_writes_file(tmp_path):
@@ -92,3 +99,20 @@ def test_failed_site_still_writes_file(tmp_path):
     assert path.name == "127.0.0.1_9.json"
     assert data["error"]
     assert data["scripts"] == [] and data["privacy_policy"] is None and data["llms_txt"] is None
+
+
+def test_same_page_privacy_anchor_is_ignored(tmp_path):
+    site = tmp_path / "site"
+    site.mkdir()
+    (site / "index.html").write_text('<a href="#privacy">Privacy</a><h2 id="privacy">Privacy</h2>', encoding="utf-8")
+    handler = functools.partial(QuietHandler, directory=str(site))
+    server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        sites = tmp_path / "sites.txt"
+        sites.write_text(f"http://localhost:{server.server_address[1]}/\n", encoding="utf-8")
+        [path] = fetcher.run(sites, tmp_path / "raw")
+        assert json.loads(path.read_text(encoding="utf-8"))["privacy_policy"] is None
+    finally:
+        server.shutdown()
+        server.server_close()
