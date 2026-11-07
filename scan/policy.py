@@ -213,24 +213,30 @@ def ai_vendors(findings):
 
 def vendor_named(raw, vendor, policy_text, ask):
     """Is the vendor named in the policy? Returns (named, quote, engine)."""
+    capped = policy_text[:POLICY_MAX]
     reply = judged(ask_model(ask, f"This is a website's privacy policy. Does it name {vendor} "
                                   f"as a service provider or data processor?",
-                             policy_text, ["yes", "no"]), policy_text, "yes")
-    if reply:
-        return reply[0] == "yes", reply[1], "model"
+                             capped, ["yes", "no"]), capped, "yes")
     quote = sentence_with(policy_text, name_pattern(ALIASES.get(vendor, [vendor])))
-    return quote is not None, quote or "", "keywords"
+    return _pick(reply, quote)
 
 
 def policy_mentions_ai(policy_text, ask):
     """Does the policy mention AI / chatbots / automated processing? Returns (yes, quote, engine)."""
+    capped = policy_text[:POLICY_MAX]
     reply = judged(ask_model(ask, "This is a website's privacy policy. Does it mention artificial "
                                   "intelligence, chatbots, virtual assistants or automated processing?",
-                             policy_text, ["yes", "no"]), policy_text, "yes")
-    if reply:
-        return reply[0] == "yes", reply[1], "model"
+                             capped, ["yes", "no"]), capped, "yes")
     quote = sentence_with(policy_text, AI_RE)
-    return quote is not None, quote or "", "keywords"
+    return _pick(reply, quote)
+
+
+def _pick(reply, keyword_quote):
+    """Model answer, unless it says "no" while the keyword search of the full text found a match
+    (the model only sees the first POLICY_MAX chars). Returns (yes, quote, engine)."""
+    if reply and (reply[0] == "yes" or keyword_quote is None):
+        return reply[0] == "yes", reply[1], "model"
+    return keyword_quote is not None, keyword_quote or "", "keywords"
 
 
 def policy_findings(raw, vendors, ask):
@@ -243,7 +249,7 @@ def policy_findings(raw, vendors, ask):
                         "Visitors can't find out what happens to their data. "
                         "Ask your web person to add a privacy policy and link it from every page.", "keywords")]
     where = policy.get("url") or page_url(raw)
-    text = mask_all_keys(policy["text"])[:POLICY_MAX]
+    text = mask_all_keys(policy["text"])
     findings = []
     for vendor in vendors:
         named, quote, engine = vendor_named(raw, vendor, text, ask)

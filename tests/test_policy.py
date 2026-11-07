@@ -165,3 +165,18 @@ def test_keys_in_policy_are_masked_before_model_and_findings():
     found = policy.judge(raw, [chatbot("Tidio")], ask)
     assert prompts and all(key not in p for p in prompts)
     assert all(key not in json.dumps(f) for f in found)
+
+
+def test_vendor_named_after_model_cap_is_not_missing():
+    raw = load_raw()
+    raw["privacy_policy"]["text"] = "Filler text. " * 3000 + "We use Tidio for chat."
+    prompts = []
+
+    def ask(prompt):
+        prompts.append(prompt)
+        return '{"answer": "no", "quote": ""}'
+
+    for engine in (None, ask):
+        found = {f["id"] for f in policy.judge(raw, [chatbot("Tidio")], engine)}
+        assert f"{SITE}:disclosure:policy-tidio" not in found
+    assert prompts and all(len(p) < policy.POLICY_MAX + 1000 for p in prompts)
