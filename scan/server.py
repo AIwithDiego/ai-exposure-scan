@@ -134,8 +134,9 @@ def scan_site(url, label=None, allow_fixture=False):
         findings = detectors.detect(raw)
         findings = merge_findings(findings, policy.judge(raw, findings, policy.model_backend()))
         entry = detectors.site_entry(raw, findings)
-    if entry.get("final_url"):
-        entry["final_url"] = mask_all_keys(entry["final_url"])
+    for field in ("final_url", "error"):
+        if entry.get(field):
+            entry[field] = mask_all_keys(entry[field])
     return entry
 
 

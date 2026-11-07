@@ -191,3 +191,24 @@ def test_bad_bodies(strict_api):
         urllib.request.urlopen(req, timeout=10)
     assert err.value.code == 400
     assert post(strict_api, ["example.ie"])[0] == 400
+
+
+def test_failed_load_masks_keys_in_error(tmp_path, monkeypatch):
+    import socket
+
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        closed = s.getsockname()[1]
+    monkeypatch.setattr(scan_server, "FIXTURE_PORT", closed)
+    httpd, base = start(tmp_path, allow_fixture=True)
+    try:
+        key = "sk-ant-" + "A1b2C3d4" * 4
+        code, body = post(base, {"url": f"http://localhost:{closed}/?k={key}"})
+        assert code == 200
+        entry = json.loads(body)
+        assert entry["error"] and entry["score"] is None
+        assert key not in body
+        assert key not in (tmp_path / "out" / "findings.json").read_text(encoding="utf-8")
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
