@@ -92,17 +92,15 @@ MIT licence.
 
 ## Run
 
-Python 3.11+.
+Python 3.11+ and Node 18+. From a fresh clone:
 
 ```
 pip install -r requirements.txt
 playwright install chromium
+(cd dashboard && npm install)
+./scripts/demo.sh
 ```
 
-Scan the fixture: start it in one terminal with `python -m http.server 8765 --directory fixtures/cafe-demo`, then in another:
+`scripts/demo.sh` starts the fixture on port 8765, runs `python -m scan all --sites data/sites.txt` (fetch, detect, policy, rescore, check against `docs/contract.md`, copy `out/findings.json` to `dashboard/public/findings.json`), then starts the dashboard at http://localhost:5173. The fixture server stops when you exit. `SITES=path/to/list.txt ./scripts/demo.sh` scans another list.
 
-```
-python -m scan fetch --sites data/sites.txt   # writes out/raw/<site>.json
-python -m scan all --sites data/sites.txt     # fetch, then detect and policy once they exist
-pytest
-```
+Check a findings file by hand with `python -m scan.validate out/findings.json`. Run the tests (fixture only, never live sites) with `pytest`.
