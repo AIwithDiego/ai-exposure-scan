@@ -199,6 +199,7 @@ a { color: var(--link); word-break: break-all; text-underline-offset: 3px; }
 /* Site head */
 .site-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; border-color: var(--champagne-edge); --bloom: radial-gradient(220px 180px at calc(100% - 88px) 50%, rgba(227, 205, 156, 0.16), transparent 70%); }
 .site-head h2 { font-size: 1.5rem; margin-bottom: 4px; }
+.site-head a { font-family: var(--font-mono); font-size: 0.875rem; }
 .site-head:has(.score-none) { border-color: var(--edge); --bloom: linear-gradient(transparent, transparent); }
 
 /* Banner: neutral slate, never red */
@@ -263,6 +264,7 @@ a { color: var(--link); word-break: break-all; text-underline-offset: 3px; }
   .panel { padding: 16px; }
   .total { padding: 14px 16px; }
   .total-count { font-size: 2.25rem; }
+  .cards .total:last-child:nth-child(odd) { grid-column: 1 / -1; }
   .sites thead { display: none; }
   .sites, .sites tbody, .sites tr, .sites td { display: block; width: 100%; }
   .sites tr { border: 1px solid var(--edge); border-radius: var(--r-tile); margin-bottom: 12px; padding: 8px 4px; }
