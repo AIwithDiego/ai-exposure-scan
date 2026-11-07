@@ -149,3 +149,19 @@ def test_error_site_is_skipped(tmp_path):
     entry = site(data, "broken.example")
     assert entry["score"] is None
     assert not any(f["type"] == "disclosure" for f in entry["findings"])
+
+
+def test_keys_in_policy_are_masked_before_model_and_findings():
+    raw = load_raw()
+    key = "sk-proj-" + "A1" * 15
+    raw["privacy_policy"]["url"] = f"https://example.ie/privacy?k={key}"
+    raw["privacy_policy"]["text"] += f"\n\nOur assistant key is {key}."
+    prompts = []
+
+    def ask(prompt):
+        prompts.append(prompt)
+        return '{"answer": "no", "quote": ""}'
+
+    found = policy.judge(raw, [chatbot("Tidio")], ask)
+    assert prompts and all(key not in p for p in prompts)
+    assert all(key not in json.dumps(f) for f in found)

@@ -140,7 +140,7 @@ def finding(raw, slug, title, severity, where, snip, fix, engine, meta=None):
         "title": title,
         "severity": severity,
         "method": "judged",
-        "evidence": {"where": where, "snippet": snippet(snip)},
+        "evidence": {"where": mask_all_keys(where), "snippet": snippet(snip)},
         "fix": fix,
         "meta": {"engine": engine, **(meta or {})},
     }
@@ -243,7 +243,7 @@ def policy_findings(raw, vendors, ask):
                         "Visitors can't find out what happens to their data. "
                         "Ask your web person to add a privacy policy and link it from every page.", "keywords")]
     where = policy.get("url") or page_url(raw)
-    text = policy["text"][:POLICY_MAX]
+    text = mask_all_keys(policy["text"])[:POLICY_MAX]
     findings = []
     for vendor in vendors:
         named, quote, engine = vendor_named(raw, vendor, text, ask)
