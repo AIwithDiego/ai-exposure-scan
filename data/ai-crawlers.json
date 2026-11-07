@@ -1,0 +1,21 @@
+{
+  "_note": "User agents to look for in robots.txt. 'purpose' is shown in the dashboard.",
+  "crawlers": [
+    { "agent": "GPTBot",            "owner": "OpenAI",     "purpose": "training" },
+    { "agent": "OAI-SearchBot",     "owner": "OpenAI",     "purpose": "search" },
+    { "agent": "ChatGPT-User",      "owner": "OpenAI",     "purpose": "user request" },
+    { "agent": "ClaudeBot",         "owner": "Anthropic",  "purpose": "training" },
+    { "agent": "Claude-SearchBot",  "owner": "Anthropic",  "purpose": "search" },
+    { "agent": "Claude-User",       "owner": "Anthropic",  "purpose": "user request" },
+    { "agent": "anthropic-ai",      "owner": "Anthropic",  "purpose": "legacy" },
+    { "agent": "Google-Extended",   "owner": "Google",     "purpose": "training" },
+    { "agent": "PerplexityBot",     "owner": "Perplexity", "purpose": "search" },
+    { "agent": "Perplexity-User",   "owner": "Perplexity", "purpose": "user request" },
+    { "agent": "Applebot-Extended", "owner": "Apple",      "purpose": "training" },
+    { "agent": "meta-externalagent","owner": "Meta",       "purpose": "training" },
+    { "agent": "Amazonbot",         "owner": "Amazon",     "purpose": "search" },
+    { "agent": "CCBot",             "owner": "Common Crawl","purpose": "training" },
+    { "agent": "Bytespider",        "owner": "ByteDance",  "purpose": "training" },
+    { "agent": "cohere-ai",         "owner": "Cohere",     "purpose": "training" }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "_note": "country = vendor headquarters, not where a given customer's data is hosted. Always say 'likely'. eu_option = vendor sells an EU data hosting option. Edit freely, but tell the team.",
+  "vendors": [
+    { "name": "Intercom",   "country": "US", "eu": false, "eu_option": true,  "match": ["widget.intercom.io", "js.intercomcdn.com", "api-iam.intercom.io", "intercomSettings"] },
+    { "name": "Tidio",      "country": "US", "eu": false, "eu_option": false, "match": ["code.tidio.co", "tidioChatApi"] },
+    { "name": "Drift",      "country": "US", "eu": false, "eu_option": false, "match": ["js.driftt.com", "drift.load("] },
+    { "name": "Zendesk",    "country": "US", "eu": false, "eu_option": true,  "match": ["static.zdassets.com", "ekr.zdassets.com", "zESettings"] },
+    { "name": "HubSpot",    "country": "US", "eu": false, "eu_option": true,  "match": ["js.usemessages.com", "js.hs-scripts.com", "HubSpotConversations"] },
+    { "name": "Tawk.to",    "country": "US", "eu": false, "eu_option": false, "match": ["embed.tawk.to", "Tawk_API"] },
+    { "name": "Freshchat",  "country": "US", "eu": false, "eu_option": true,  "match": ["wchat.freshchat.com", "fcWidget"] },
+    { "name": "Chatbase",   "country": "US", "eu": false, "eu_option": false, "match": ["chatbase.co/embed", "chatbaseConfig"] },
+    { "name": "ManyChat",   "country": "US", "eu": false, "eu_option": false, "match": ["widget.manychat.com"] },
+    { "name": "Voiceflow",  "country": "CA", "eu": false, "eu_option": false, "match": ["cdn.voiceflow.com", "voiceflow.chat.load"] },
+    { "name": "Botpress",   "country": "CA", "eu": false, "eu_option": false, "match": ["cdn.botpress.cloud", "botpressWebChat"] },
+    { "name": "Ada",        "country": "CA", "eu": false, "eu_option": true,  "match": ["static.ada.support", "adaEmbed"] },
+    { "name": "Crisp",      "country": "FR", "eu": true,  "eu_option": true,  "match": ["client.crisp.chat", "$crisp"] },
+    { "name": "LiveChat",   "country": "PL", "eu": true,  "eu_option": true,  "match": ["cdn.livechatinc.com", "__lc.license"] },
+    { "name": "Userlike",   "country": "DE", "eu": true,  "eu_option": true,  "match": ["userlike-cdn-widgets", "userlike.com"] },
+    { "name": "Landbot",    "country": "ES", "eu": true,  "eu_option": true,  "match": ["static.landbot.io", "Landbot.Livechat"] },
+    { "name": "OpenAI API (called from the browser)",    "country": "US", "eu": false, "eu_option": false, "match": ["api.openai.com"] },
+    { "name": "Anthropic API (called from the browser)", "country": "US", "eu": false, "eu_option": false, "match": ["api.anthropic.com"] },
+    { "name": "Google Gemini API (called from the browser)", "country": "US", "eu": false, "eu_option": false, "match": ["generativelanguage.googleapis.com"] }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "_note": "Mask every match before it leaves the detector: first 8 chars + '…' + last 4. Never test a key. Order matters: check Anthropic before OpenAI (both start with sk-). Each regex starts with a lookbehind so CSS class names like 'task-list-...' don't match.",
+  "patterns": [
+    {
+      "key_type": "Anthropic",
+      "regex": "(?<![A-Za-z0-9_-])sk-ant-[A-Za-z0-9_-]{20,}",
+      "severity": "high"
+    },
+    {
+      "key_type": "OpenAI",
+      "regex": "(?<![A-Za-z0-9_-])sk-(?:proj-|svcacct-)?[A-Za-z0-9_-]{20,}",
+      "severity": "high"
+    },
+    {
+      "key_type": "Groq",
+      "regex": "(?<![A-Za-z0-9_-])gsk_[A-Za-z0-9]{20,}",
+      "severity": "high"
+    },
+    {
+      "key_type": "Hugging Face",
+      "regex": "(?<![A-Za-z0-9_-])hf_[A-Za-z0-9]{30,}",
+      "severity": "high"
+    },
+    {
+      "key_type": "Replicate",
+      "regex": "(?<![A-Za-z0-9_-])r8_[A-Za-z0-9]{20,}",
+      "severity": "high"
+    },
+    {
+      "key_type": "Google (often a Maps key, usually meant to be public)",
+      "regex": "(?<![A-Za-z0-9_-])AIza[0-9A-Za-z_-]{35}",
+      "severity": "low"
+    }
+  ]
+}

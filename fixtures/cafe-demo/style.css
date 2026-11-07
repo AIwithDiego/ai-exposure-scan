@@ -1,0 +1,5 @@
+body { font-family: Georgia, serif; max-width: 640px; margin: 40px auto; padding: 0 16px; color: #2b2118; background: #fbf7f1; line-height: 1.6; }
+h1, h2 { font-weight: normal; }
+button { font: inherit; padding: 8px 16px; border: 1px solid #2b2118; background: none; cursor: pointer; }
+footer { margin-top: 48px; font-size: 14px; }
+a { color: #7a3e1d; }

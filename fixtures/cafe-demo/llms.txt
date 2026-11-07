@@ -1,0 +1,6 @@
+# Bella's Café
+> Neighbourhood café in Dublin 8. Coffee, sourdough, scones.
+
+- Menu: /index.html
+- Opening hours: Mon to Fri 07:30 to 17:00, Sat and Sun 09:00 to 16:00
+- MCP server for ordering: https://bellas-cafe.example/mcp

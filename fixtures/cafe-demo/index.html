@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bella's Café · Dublin 8</title>
+  <link rel="stylesheet" href="/style.css">
+  <!-- FIXTURE: fake café site for AI Exposure Scan demos and tests. Every finding type is planted on purpose. -->
+  <script>
+    // Planted chatbot: Intercom config (detected via inline marker, no real Intercom call is made)
+    window.intercomSettings = {
+      app_id: "demo123",
+      greeting: "Hi! I'm Bella, how can I help with your order today?",
+      botName: "Bella"
+    };
+  </script>
+</head>
+<body>
+  <header>
+    <h1>Bella's Café</h1>
+    <p>Flat whites, sourdough and the best scones in Dublin 8.</p>
+  </header>
+  <main>
+    <section>
+      <h2>Order ahead</h2>
+      <p>Tell us what you fancy and we'll have it ready. Our menu assistant can suggest something.</p>
+      <button id="suggest">Suggest something</button>
+      <p id="suggestion"></p>
+    </section>
+    <section>
+      <h2>Opening hours</h2>
+      <p>Mon to Fri 07:30 to 17:00 · Sat and Sun 09:00 to 16:00</p>
+    </section>
+  </main>
+  <footer>
+    <a href="/privacy.html">Privacy policy</a> · <a href="/llms.txt">llms.txt</a>
+  </footer>
+  <script src="/js/menu-assistant.js"></script>
+</body>
+</html>
