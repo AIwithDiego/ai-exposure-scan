@@ -278,6 +278,8 @@ a:hover { color: var(--text); }
 
 /* Sidebar nav (new — needs a small layout change in App.jsx) */
 .shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 100vh; }
+.shell .page { width: 100%; }
+.shell .header { margin: 0 -24px 32px; padding: 28px 24px; }
 .sidebar { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; gap: 24px; padding: 24px 16px; background: var(--surface); border-right: 1px solid var(--border); }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; padding: 0 8px; }
 .brand-mark { width: 28px; height: 28px; flex-shrink: 0; color: var(--accent); }
@@ -305,7 +307,8 @@ a:hover { color: var(--text); }
 }
 
 @media (max-width: 640px) {
-  .page { padding: 20px 16px 48px; }
+  .page { padding: 0 16px 48px; }
+  .shell .header { margin-inline: -16px; padding-inline: 16px; }
   .panel { padding: 16px; }
   .cards { grid-template-columns: 1fr; }
   .sites thead { display: none; }
