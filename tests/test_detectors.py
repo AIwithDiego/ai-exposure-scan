@@ -120,6 +120,92 @@ def test_vendor_matched_by_request_domain():
     assert "Tidio" in {b["meta"]["vendor"] for b in detectors.chatbots(raw)}
 
 
+def _bare_raw():
+    return {**load_raw(), "scripts": [], "requests": []}
+
+
+@pytest.mark.parametrize("vendor, where, value, outside_eu", [
+    ("LivePerson", "script", "https://lptag.liveperson.net/tag/tag.js?site=123", True),
+    ("Gorgias", "request", "https://config.gorgias.chat/bundle-loader/abc", True),
+    ("Qualified", "script", "https://js.qualified.com/qualified.js?token=abc", True),
+    ("Boost.ai", "script", "https://acme.boost.ai/chatPanel/chatPanel.js", True),
+    ("Zoho SalesIQ", "inline", "window.$zoho=window.$zoho||{};$zoho.salesiq=$zoho.salesiq||{ready:function(){}}", True),
+    ("IBM watsonx Assistant", "inline", "window.watsonAssistantChatOptions = { integrationID: 'x' };", True),
+    ("Smartsupp", "script", "https://www.smartsuppchat.com/loader.js?", False),
+    ("Trengo", "request", "https://static.widget.trengo.eu/embed.js", False),
+])
+def test_new_chat_vendors(vendor, where, value, outside_eu):
+    raw = _bare_raw()
+    if where == "script":
+        raw["scripts"].append({"src": value, "inline": False, "content": None})
+    elif where == "request":
+        raw["requests"].append({"url": value, "domain": urlsplit(value).netloc, "method": "GET", "resource_type": "script"})
+    else:
+        raw["scripts"].append({"src": None, "inline": True, "content": value})
+    bots = detectors.chatbots(raw)
+    assert [b["meta"]["vendor"] for b in bots] == [vendor]
+    transfers = detectors.data_transfer(raw, bots)
+    if outside_eu:
+        [dt] = transfers
+        assert dt["severity"] == "low" and dt["meta"]["vendor"] == vendor
+    else:
+        assert transfers == []
+
+
+def test_vendor_sniffing_code_is_not_a_chatbot():
+    raw = _bare_raw()
+    sniff = 'void 0!==window.embedded_svc||void 0!==window.lwcRuntimeFlags'
+    raw["scripts"].append({"src": None, "inline": True, "content": sniff})
+    assert detectors.chatbots(raw) == []
+
+
+def test_vendor_match_strings_only_hit_their_own_vendor():
+    for vendor in detectors.VENDORS:
+        for m in vendor["match"]:
+            raw = _bare_raw()
+            if detectors._is_host_match(m):
+                url = f"https://{m}" if "/" in m else f"https://{m}/x.js"
+                raw["requests"].append({"url": url, "domain": urlsplit(url).hostname, "method": "GET",
+                                        "resource_type": "script"})
+            else:
+                raw["scripts"].append({"src": None, "inline": True, "content": f"x {m} x"})
+            found = [b["meta"]["vendor"] for b in detectors.chatbots(raw)]
+            assert found == [detectors.short_name(vendor["name"])], (m, found)
+
+
+def _inline(content):
+    return {"src": None, "inline": True, "content": content}
+
+
+@pytest.mark.parametrize("scripts, requests", [
+    ([_inline('{"@context":"https://schema.org","@type":"Organization",'
+              '"sameAs":["https://www.kindly.ai/customers/acme","https://www.linkedin.com/company/acme"]}')], []),
+    ([_inline('self.__next_f.push([1,"{\\"vendors\\":[\\"sierra.ai\\",\\"https://decagon.ai/blog\\",'
+              '\\"moin.ai\\"]}"])')], []),
+    ([_inline('["https://service.giosg.com","https://fonts.gstatic.com"].forEach(function(h){'
+              'var l=document.createElement("link");l.rel="preconnect";l.href=h;document.head.appendChild(l)})')], []),
+    ([_inline('var qbOptions = {quality: 80, lazy: true};')], []),
+    ([], [{"url": "https://api.chamoin.ai/v1/menu", "domain": "api.chamoin.ai", "method": "GET",
+           "resource_type": "fetch"}]),
+], ids=["json-ld-sameas", "nextjs-page-data", "preconnect-list", "unrelated-qboptions", "lookalike-domain"])
+def test_hostnames_in_text_and_lookalike_domains_are_not_chatbots(scripts, requests):
+    raw = _bare_raw()
+    raw.update(scripts=scripts, requests=requests)
+    assert detectors.chatbots(raw) == []
+
+
+def test_vendor_entries_are_well_formed():
+    names = [v["name"] for v in detectors.VENDORS]
+    assert len(names) == len(set(names))
+    for v in detectors.VENDORS:
+        assert v["country"] in detectors.COUNTRY_NAMES, v["name"]
+        assert v["eu"] == (v["country"] in detectors.EU_COUNTRIES), v["name"]
+        assert v["match"] and all(isinstance(m, str) and m for m in v["match"]), v["name"]
+        name, country = detectors.short_name(v["name"]), detectors.COUNTRY_NAMES[v["country"]]
+        for title in (f"{name} chat widget on the homepage", f"Chat messages likely go to {country} ({name})"):
+            assert len(title) < 70, title
+
+
 def _hubspot_vendors(raw):
     return [b for b in detectors.chatbots(raw) if b["meta"]["vendor"] == "HubSpot"]
 

@@ -18,7 +18,7 @@ const COUNTRIES = {
   FI: "Finland", GR: "Greece", HU: "Hungary", LV: "Latvia", LT: "Lithuania", LU: "Luxembourg",
   MT: "Malta", PT: "Portugal", RO: "Romania", SK: "Slovakia", SI: "Slovenia", CH: "Switzerland",
   NO: "Norway", IS: "Iceland", NZ: "New Zealand", SG: "Singapore", JP: "Japan", HK: "Hong Kong",
-  BR: "Brazil", ZA: "South Africa", KR: "South Korea",
+  BR: "Brazil", ZA: "South Africa", KR: "South Korea", AR: "Argentina",
 };
 
 const EU_COUNTRIES = new Set([
