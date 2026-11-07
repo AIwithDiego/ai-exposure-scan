@@ -80,7 +80,7 @@ npm run dev        # http://localhost:5173
 npm run build      # production build in dashboard/dist
 ```
 
-It reads `dashboard/public/findings.json`, which starts as a copy of `data/fake-findings.json`. After a scan, `npm run data` copies `../out/findings.json` there (`npm run data:fake` puts the fake data back). Any file in the contract format works without code changes.
+It reads `dashboard/public/findings.json`. That file is git-ignored so real scan results are never committed; `npm run dev` and `npm run build` seed it from `data/fake-findings.json` if it's missing. `python -m scan all` (or `npm run data`) copies `../out/findings.json` there, and `npm run data:fake` puts the fake data back. Any file in the contract format works without code changes.
 
 ## Ground rules
 

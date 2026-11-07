@@ -4,11 +4,14 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "predev": "npm run data:seed",
     "dev": "vite",
+    "prebuild": "npm run data:seed",
     "build": "vite build",
     "preview": "vite preview",
     "data": "cp ../out/findings.json public/findings.json",
-    "data:fake": "cp ../data/fake-findings.json public/findings.json"
+    "data:fake": "cp ../data/fake-findings.json public/findings.json",
+    "data:seed": "node -e \"const fs=require('fs');if(!fs.existsSync('public/findings.json'))fs.copyFileSync('../data/fake-findings.json','public/findings.json')\""
   },
   "dependencies": {
     "react": "^18.3.1",
