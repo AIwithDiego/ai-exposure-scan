@@ -1,0 +1,158 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 690" width="1200" height="690" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <title>AI Exposure Scan: how it works</title>
+  <desc>A website goes into the Fetcher, which visits it once like a normal visitor. Detectors (plain code) and the Policy reader (model) turn what it saw into findings.json, which the Dashboard shows with evidence and a fix. It finds five kinds of AI exposure.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8A7F72"/>
+    </marker>
+    <style>
+      .card { fill: #FFFFFF; stroke: #E3DACD; stroke-width: 1.5; }
+      .step { font-size: 12px; font-weight: 700; letter-spacing: 1.2px; fill: #C2562B; }
+      .h { font-size: 19px; font-weight: 700; fill: #2B2118; }
+      .t { font-size: 13.5px; fill: #5E554A; }
+      .s { font-size: 12.5px; fill: #5E554A; }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; fill: #8A7F72; }
+      .line { stroke: #8A7F72; stroke-width: 2; fill: none; }
+      .chipT { font-size: 16px; font-weight: 700; fill: #2B2118; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="690" rx="20" fill="#FBF8F3"/>
+
+  <!-- Title -->
+  <text x="48" y="60" font-size="32" font-weight="800" fill="#2B2118">AI Exposure Scan</text>
+  <text x="48" y="90" font-size="17" fill="#5E554A">Type in a website. See what AI it exposes, with the evidence for every finding.</text>
+
+  <!-- 1 Website -->
+  <rect class="card" x="48" y="125" width="190" height="210" rx="14"/>
+  <text class="step" x="68" y="155">1 · INPUT</text>
+  <text class="h" x="68" y="182">A website</text>
+  <rect x="68" y="200" width="150" height="34" rx="17" fill="#F4EEE5" stroke="#E3DACD"/>
+  <circle cx="86" cy="217" r="5" fill="#C2562B"/>
+  <text x="98" y="222" font-size="13" fill="#2B2118">bellas-cafe.ie</text>
+  <text class="t" x="68" y="262">Up to 10 sites,</text>
+  <text class="t" x="68" y="280">ours or volunteers'</text>
+  <text class="mono" x="68" y="315">data/sites.txt</text>
+
+  <path class="line" d="M240 230 H274" marker-end="url(#arrow)"/>
+
+  <!-- 2 Fetcher -->
+  <rect class="card" x="278" y="125" width="230" height="210" rx="14"/>
+  <text class="step" x="298" y="155">2 · FETCHER</text>
+  <text class="h" x="298" y="182">Visits it once</text>
+  <text class="t" x="298" y="204">like a normal visitor and keeps:</text>
+  <text class="s" x="298" y="230">•  page HTML and scripts</text>
+  <text class="s" x="298" y="249">•  network calls</text>
+  <text class="s" x="298" y="268">•  robots.txt and llms.txt</text>
+  <text class="s" x="298" y="287">•  privacy policy text</text>
+  <text class="mono" x="298" y="315">out/raw/&lt;site&gt;.json</text>
+
+  <path class="line" d="M510 230 H526 V176 H544" marker-end="url(#arrow)"/>
+  <path class="line" d="M526 230 V284 H544"/>
+  <path class="line" d="M526 284 H544" marker-end="url(#arrow)"/>
+
+  <!-- 3a Detectors -->
+  <rect class="card" x="548" y="125" width="230" height="100" rx="14"/>
+  <text class="step" x="568" y="153">3A · DETECTORS</text>
+  <text class="h" x="568" y="179">Plain code checks</text>
+  <rect x="568" y="193" width="72" height="20" rx="10" fill="#2B2118"/>
+  <text x="604" y="207" font-size="11.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">detected</text>
+  <text class="s" x="650" y="208">vendors, keys, rules</text>
+
+  <!-- 3b Policy reader -->
+  <rect class="card" x="548" y="235" width="230" height="100" rx="14"/>
+  <text class="step" x="568" y="263">3B · POLICY READER</text>
+  <text class="h" x="568" y="289">Reads the policy</text>
+  <rect x="568" y="303" width="64" height="20" rx="10" fill="#FFFFFF" stroke="#2B2118" stroke-width="1.5"/>
+  <text x="600" y="317" font-size="11.5" font-weight="700" fill="#2B2118" text-anchor="middle">judged</text>
+  <text class="s" x="642" y="318">model or keywords</text>
+
+  <path class="line" d="M780 176 H796 V230 H814" marker-end="url(#arrow)"/>
+  <path class="line" d="M780 284 H796 V230"/>
+
+  <!-- 4 findings.json -->
+  <rect class="card" x="818" y="125" width="130" height="210" rx="14"/>
+  <text class="step" x="836" y="155">4 · FINDINGS</text>
+  <text class="h" x="836" y="182">One file</text>
+  <text class="t" x="836" y="204">every part</text>
+  <text class="t" x="836" y="222">agrees on</text>
+  <rect x="836" y="238" width="94" height="58" rx="6" fill="#2B2118"/>
+  <text x="846" y="257" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="#F4C9A8">type</text>
+  <text x="846" y="272" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="#F4C9A8">evidence</text>
+  <text x="846" y="287" font-family="ui-monospace, Menlo, monospace" font-size="10.5" fill="#F4C9A8">fix</text>
+  <text class="mono" x="836" y="315">findings.json</text>
+
+  <path class="line" d="M950 230 H984" marker-end="url(#arrow)"/>
+
+  <!-- 5 Dashboard -->
+  <rect class="card" x="988" y="125" width="164" height="210" rx="14"/>
+  <text class="step" x="1006" y="155">5 · DASHBOARD</text>
+  <text class="h" x="1006" y="182">Plain answers</text>
+  <rect x="1006" y="196" width="128" height="72" rx="8" fill="#F4EEE5" stroke="#E3DACD"/>
+  <circle cx="1030" cy="221" r="15" fill="none" stroke="#D99A2B" stroke-width="4"/>
+  <text x="1030" y="226" font-size="12" font-weight="800" fill="#2B2118" text-anchor="middle">52</text>
+  <rect x="1054" y="212" width="66" height="7" rx="3.5" fill="#C2412D"/>
+  <rect x="1054" y="226" width="48" height="7" rx="3.5" fill="#D99A2B"/>
+  <rect x="1016" y="246" width="108" height="12" rx="3" fill="#FFFFFF" stroke="#E3DACD"/>
+  <text x="1022" y="255" font-size="8.5" fill="#5E554A">Tell your web person…</text>
+  <text class="t" x="1006" y="292">Score, evidence,</text>
+  <text class="t" x="1006" y="310">and the fix to forward</text>
+
+  <!-- What it finds -->
+  <text x="48" y="392" font-size="13" font-weight="700" letter-spacing="1.4" fill="#8A7F72">WHAT IT FINDS</text>
+
+  <g>
+    <rect class="card" x="48" y="408" width="208" height="150" rx="14"/>
+    <rect x="48" y="408" width="208" height="6" rx="3" fill="#3B6EA8"/>
+    <text class="chipT" x="66" y="444">AI on the site</text>
+    <text class="s" x="66" y="468">Chat widgets and AI</text>
+    <text class="s" x="66" y="486">calls, and which vendor</text>
+    <text class="mono" x="66" y="538">chatbot</text>
+  </g>
+  <g>
+    <rect class="card" x="272" y="408" width="208" height="150" rx="14"/>
+    <rect x="272" y="408" width="208" height="6" rx="3" fill="#7A5BA6"/>
+    <text class="chipT" x="290" y="444">Where data goes</text>
+    <text class="s" x="290" y="468">Vendor's country, and</text>
+    <text class="s" x="290" y="486">whether it likely leaves</text>
+    <text class="s" x="290" y="504">the EU</text>
+    <text class="mono" x="290" y="538">data_transfer</text>
+  </g>
+  <g>
+    <rect class="card" x="496" y="408" width="208" height="150" rx="14"/>
+    <rect x="496" y="408" width="208" height="6" rx="3" fill="#C2412D"/>
+    <text class="chipT" x="514" y="444">Leaked AI keys</text>
+    <text class="s" x="514" y="468">Secret keys sitting in</text>
+    <text class="s" x="514" y="486">public code. Masked,</text>
+    <text class="s" x="514" y="504">never tested</text>
+    <text class="mono" x="514" y="538">key_leak</text>
+  </g>
+  <g>
+    <rect class="card" x="720" y="408" width="208" height="150" rx="14"/>
+    <rect x="720" y="408" width="208" height="6" rx="3" fill="#C98A16"/>
+    <text class="chipT" x="738" y="444">Disclosure</text>
+    <text class="s" x="738" y="468">Does the bot say it's AI?</text>
+    <text class="s" x="738" y="486">Does the policy name</text>
+    <text class="s" x="738" y="504">the AI providers?</text>
+    <text class="mono" x="738" y="538">disclosure</text>
+  </g>
+  <g>
+    <rect class="card" x="944" y="408" width="208" height="150" rx="14"/>
+    <rect x="944" y="408" width="208" height="6" rx="3" fill="#3F8A5A"/>
+    <text class="chipT" x="962" y="444">Agent readiness</text>
+    <text class="s" x="962" y="468">llms.txt, AI crawler</text>
+    <text class="s" x="962" y="486">rules, MCP servers the</text>
+    <text class="s" x="962" y="504">site names</text>
+    <text class="mono" x="962" y="538">agent_ready</text>
+  </g>
+
+  <!-- Rules -->
+  <line x1="48" y1="592" x2="1152" y2="592" stroke="#E3DACD" stroke-width="1.5"/>
+  <circle cx="54" cy="623" r="4" fill="#C2562B"/>
+  <text x="68" y="628" font-size="14" fill="#2B2118"><tspan font-weight="700">Passive.</tspan> One normal visit, nothing hacked</text>
+  <circle cx="432" cy="623" r="4" fill="#C2562B"/>
+  <text x="446" y="628" font-size="14" fill="#2B2118"><tspan font-weight="700">Safe.</tspan> Keys masked, never tested</text>
+  <circle cx="752" cy="623" r="4" fill="#C2562B"/>
+  <text x="766" y="628" font-size="14" fill="#2B2118"><tspan font-weight="700">Honest.</tspan> Every finding shows its evidence</text>
+  <text x="48" y="664" font-size="14" font-style="italic" fill="#8A7F72">TrendAI scans enterprises for exposed AI. We built the version for the café down the road.</text>
+</svg>

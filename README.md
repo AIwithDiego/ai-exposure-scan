@@ -6,6 +6,8 @@ Type in a website. A headless browser visits it like a normal person would. We c
 
 Built at the Cognition x Give(a)Go build day, Dublin, 7 Nov 2026.
 
+![How AI Exposure Scan works](docs/how-it-works.svg)
+
 ## What it finds
 
 | Type | What we look for |
@@ -49,6 +51,7 @@ docs/
   team-plan.md      who does what, for 1 to 4 people, and the order of work
   credits.md        how to not burn Devin credits
   pitch.md          the demo script
+  how-it-works.svg  the one-picture explainer (use it in the pitch)
 prompts/
   01-fetcher.md         Fetcher
   02-detectors.md       Detectors
