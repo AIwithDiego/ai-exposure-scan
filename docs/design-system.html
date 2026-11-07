@@ -1130,7 +1130,9 @@ a:hover { color: #d4c6ff; }
     } else {
       var ta = document.createElement("textarea");
       ta.value = text; document.body.appendChild(ta); ta.select();
-      try { document.execCommand("copy"); flash(btn, "Copied"); } catch (e) { flash(btn, "Couldn't copy"); }
+      var ok = false;
+      try { ok = document.execCommand("copy"); } catch (e) {}
+      flash(btn, ok ? "Copied" : "Couldn't copy");
       ta.remove();
     }
   }
