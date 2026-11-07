@@ -5,7 +5,7 @@
     { "name": "Tidio",      "country": "US", "eu": false, "eu_option": false, "match": ["code.tidio.co", "tidioChatApi"] },
     { "name": "Drift",      "country": "US", "eu": false, "eu_option": false, "match": ["js.driftt.com", "drift.load("] },
     { "name": "Zendesk",    "country": "US", "eu": false, "eu_option": true,  "match": ["static.zdassets.com", "ekr.zdassets.com", "zESettings"] },
-    { "name": "HubSpot",    "country": "US", "eu": false, "eu_option": true,  "match": ["js.usemessages.com", "js.hs-scripts.com", "HubSpotConversations"] },
+    { "name": "HubSpot",    "country": "US", "eu": false, "eu_option": true,  "match": ["js.usemessages.com", "HubSpotConversations"] },
     { "name": "Tawk.to",    "country": "US", "eu": false, "eu_option": false, "match": ["embed.tawk.to", "Tawk_API"] },
     { "name": "Freshchat",  "country": "US", "eu": false, "eu_option": true,  "match": ["wchat.freshchat.com", "fcWidget"] },
     { "name": "Chatbase",   "country": "US", "eu": false, "eu_option": false, "match": ["chatbase.co/embed", "chatbaseConfig"] },

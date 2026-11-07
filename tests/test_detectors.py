@@ -119,6 +119,25 @@ def test_vendor_matched_by_request_domain():
     assert "Tidio" in {b["meta"]["vendor"] for b in detectors.chatbots(raw)}
 
 
+def _hubspot_vendors(raw):
+    return [b for b in detectors.chatbots(raw) if b["meta"]["vendor"] == "HubSpot"]
+
+
+def test_hubspot_tracking_script_is_not_a_chatbot():
+    raw = load_raw()
+    url = "https://js.hs-scripts.com/1234567.js"
+    raw["scripts"].append({"src": url, "inline": False, "content": None})
+    raw["requests"].append({"url": url, "domain": "js.hs-scripts.com", "method": "GET", "resource_type": "script"})
+    assert _hubspot_vendors(raw) == []
+
+
+def test_hubspot_chat_script_is_a_chatbot():
+    raw = load_raw()
+    raw["scripts"].append({"src": "https://js.usemessages.com/conversations-embed.js", "inline": False, "content": None})
+    [bot] = _hubspot_vendors(raw)
+    assert bot["type"] == "chatbot" and bot["meta"]["country"] == "US"
+
+
 def test_anthropic_key_not_double_counted_and_google_low():
     raw = load_raw()
     ant = "sk-ant-" + "A1b2C3d4" * 4
