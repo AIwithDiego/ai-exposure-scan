@@ -36,6 +36,7 @@ jobs:
           mkdir -p public
           cp ../data/demo-findings.json public/findings.json
           npm run build
+          cp ../docs/design-system.html dist/design-system.html
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dashboard/dist
