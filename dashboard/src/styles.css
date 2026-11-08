@@ -365,3 +365,8 @@ a { color: var(--link); word-break: break-all; text-underline-offset: 3px; }
   .scan-input { border: 1px solid CanvasText; backdrop-filter: none; }
   .scan-progress::after { forced-color-adjust: none; background: Highlight; }
 }
+
+/* Public demo build (VITE_DEMO=1): the scan bar links to the repo instead of scanning. */
+a.scan-button { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; white-space: nowrap; }
+div.scan-bar .scan-input:disabled { cursor: default; }
+.demo-note { margin-top: 10px; }

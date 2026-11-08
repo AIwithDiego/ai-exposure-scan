@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
 
+// Static build for the public demo (GitHub Pages): sample data only, no scan server.
+const DEMO = import.meta.env.VITE_DEMO === "1";
+const REPO_URL = "https://github.com/AIwithDiego/ai-exposure-scan";
+
 const TYPES = [
   { key: "chatbot", label: "Chatbots" },
   { key: "data_transfer", label: "Data transfer" },
@@ -441,6 +445,27 @@ function scanHost(text) {
   }
 }
 
+function DemoScanBar() {
+  return (
+    <section className="scan" aria-label="Scan a website">
+      <div className="scan-bar">
+        <label htmlFor="scan-url" className="visually-hidden">Website to scan</label>
+        <input
+          id="scan-url"
+          className="scan-input"
+          type="text"
+          placeholder="Scanning runs on your machine"
+          disabled
+        />
+        <a className="button scan-button" href={`${REPO_URL}#run-it-yourself`}>Run it yourself</a>
+      </div>
+      <p className="muted small demo-note">
+        Live demo with sample data: a fake café scanned by the real pipeline, plus made-up sites. No real website appears here.
+      </p>
+    </section>
+  );
+}
+
 function ScanBar({ onScanned }) {
   const [url, setUrl] = useState("");
   const [scanning, setScanning] = useState(null);
@@ -516,8 +541,8 @@ export default function App() {
         if (!r.ok) throw new Error(`${path} returned ${r.status}`);
         return r.json();
       });
-    load("/api/findings")
-      .catch(() => load("/findings.json"))
+    const bundled = `${import.meta.env.BASE_URL}findings.json`;
+    (DEMO ? load(bundled) : load("/api/findings").catch(() => load(bundled)))
       .then(setData)
       .catch((e) => setLoadError(e.message));
   }, []);
@@ -558,7 +583,7 @@ export default function App() {
         )}
       </header>
       <main>
-        {!site && <ScanBar onScanned={addScanned} />}
+        {!site && (DEMO ? <DemoScanBar /> : <ScanBar onScanned={addScanned} />)}
         {loadError && <div className="banner" role="alert">Couldn't load the scan results ({loadError}).</div>}
         {!data && !loadError && <p className="muted">Loading…</p>}
         {data && (site ? <SiteView site={site} onBack={() => select(null)} /> : <Overview data={data} onSelect={select} />)}
@@ -569,6 +594,11 @@ export default function App() {
         {" "}(
         <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer noopener">CC BY 4.0</a>
         ).
+        {DEMO && (
+          <>
+            {" "}Source on <a href={REPO_URL} target="_blank" rel="noreferrer noopener">GitHub</a>.
+          </>
+        )}
       </footer>
     </div>
   );
